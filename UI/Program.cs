@@ -1,4 +1,7 @@
-﻿using Core.Models;
+﻿using Application.Services;
+using Core.Interfaces;
+using Core.Models;
+using Repository.Data;
 
 namespace UI
 {
@@ -7,17 +10,22 @@ namespace UI
         static void Main(string[] args)
         {
 
-            Client myClient = new Client();
-            myClient.Username = "TestingUser";
-            myClient.Balance = 150;
+            //Client myClient = new Client();
+            //myClient.Username = "TestingUser";
+            //myClient.Balance = 150;
 
-            myClient.DisplayMenu();
+            //myClient.DisplayMenu();
 
-            // 2. Create and test an Admin
-            Admin myAdmin = new Admin();
-            myAdmin.Username = "TestingAdmin";
+            //// 2. Create and test an Admin
+            //Admin myAdmin = new Admin();
+            //myAdmin.Username = "TestingAdmin";
 
-            myAdmin.DisplayMenu();
+            //myAdmin.DisplayMenu();
+
+            IFileManager repository = new FileRepository();
+            UserServices userServices = new UserServices(repository);
+
+            userServices.RegisterUser("John doe", "password123");
         }
     }
 }
