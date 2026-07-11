@@ -82,7 +82,7 @@ namespace Repository.Data
             File.WriteAllLines(_filePath, lines);
         }
 
-        public void saveChanges()
+        public void SaveChanges()
         {
             
         }

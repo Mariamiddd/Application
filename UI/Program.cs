@@ -1,31 +1,23 @@
-﻿using Application.Services;
+using System;
 using Core.Interfaces;
-using Core.Models;
 using Repository.Data;
+using Application.Services;
+using Application.InterfaceServices;
 
 namespace UI
 {
-    internal class Program
+    class Program
     {
         static void Main(string[] args)
         {
-
-            //Client myClient = new Client();
-            //myClient.Username = "TestingUser";
-            //myClient.Balance = 150;
-
-            //myClient.DisplayMenu();
-
-            //// 2. Create and test an Admin
-            //Admin myAdmin = new Admin();
-            //myAdmin.Username = "TestingAdmin";
-
-            //myAdmin.DisplayMenu();
-
             IFileManager repository = new FileRepository();
-            UserServices userServices = new UserServices(repository);
+            IAuthService authService = new AuthService(repository);
 
-            userServices.RegisterUser("John doe", "password123");
+            var ui = new ConsoleUI(authService);
+            var app = new App(ui);
+            app.Run();
         }
     }
 }
+
+

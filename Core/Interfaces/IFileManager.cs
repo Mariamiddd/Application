@@ -16,6 +16,7 @@ namespace Core.Interfaces
         void RemoveUser(Account user);
         void DeleteUser(int id);
         void UpdateUser(Account user);
-        void saveChanges();
+        void SaveChanges();
+
     }
 }
