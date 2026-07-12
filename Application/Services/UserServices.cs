@@ -11,61 +11,49 @@ namespace Application.Services
     public class UserServices : IUserService
     {
         private readonly IFileManager _fileManager;
+
         public UserServices(IFileManager fileManager)
         {
             _fileManager = fileManager;
         }
 
-
-        public IReadOnlyList<UserModel> GetAll()
+        public List<User> GetAll()
         {
-            var users = _fileManager.GetAllUsers() ?? new List<Account>();
-            var models = users.Select(a => MapToModel(a)).ToList();
-            return (IReadOnlyList<UserModel>)models;
+            return _fileManager.GetAllUsers();
         }
 
-        public UserModel? GetById(int id)
+        public User? GetById(int id)
         {
-            var account = _fileManager.GetUserById(id);
-            if (account == null) return null;
-            return MapToModel(account);
+            return _fileManager.GetUserById(id);
         }
 
-        public UserModel? GetByEmail(string email)
+        public User? GetByEmail(string email)
         {
-            var account = _fileManager.GetUserByEmail(email);
-            if (account == null) return null;
-            return MapToModel(account);
+            return _fileManager.GetUserByEmail(email);
         }
-
-        public void Update(int id, UserUpdateModel updateModel)
+        public bool ExistsByEmail(string email)
         {
-            var account = _fileManager.GetUserById(id);
-            if (account == null) throw new KeyNotFoundException("User not found.");
-
-            if (updateModel.FirstName is not null) account.Name = updateModel.FirstName;
-            if (updateModel.LastName is not null) account.lasName = updateModel.LastName;
-            if (updateModel.IsVerified.HasValue) account.isVerified = updateModel.IsVerified.Value;
-
-            _fileManager.UpdateUser(account);
+            // if iuser exists we return true else false
+            return _fileManager.GetUserByEmail(email) != null;
         }
 
         public void Delete(int id)
         {
+            var existingUser = GetById(id);
+            if (existingUser != null)
+            {
+                throw new KeyNotFoundException($"User with id {id} not found.");
+            }
             _fileManager.DeleteUser(id);
         }
-
-        public bool ExistsByEmail(string email)
+        public void Update(User user)
         {
-            var account = _fileManager.GetUserByEmail(email);
-            return account != null;
+            var existingUser = GetById(user.Id);
+            if (existingUser == null) {
+                throw new KeyNotFoundException($"User with id {user.Id} not found.");
+            }
+            _fileManager.UpdateUser(user);
         }
 
-        private UserModel MapToModel(Account a)
-        {
-            return new UserModel(a.Id, a.Email ?? string.Empty, a.Name, a.lasName, a.isVerified);
-        }
-
-        // User creation and authentication responsibilities moved to AuthService
     }
 }

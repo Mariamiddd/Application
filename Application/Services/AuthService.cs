@@ -1,5 +1,7 @@
 using System;
+using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using Application.InterfaceServices;
 using Core.Interfaces;
 using Core.Models;
@@ -9,57 +11,70 @@ namespace Application.Services
     public class AuthService : IAuthService
     {
         private readonly IFileManager _fileManager;
-
+        
         public AuthService(IFileManager fileManager)
         {
             _fileManager = fileManager;
         }
 
-        public UserModel Register(RegistrationModel registrationModel)
+        public User Register(string email, string password, string firstName, string lastName)
         {
-            if (string.IsNullOrWhiteSpace(registrationModel.Email)) throw new ArgumentException("Email is required", nameof(registrationModel.Email));
-            if (string.IsNullOrWhiteSpace(registrationModel.Password)) throw new ArgumentException("Password is required", nameof(registrationModel.Password));
 
-            var existing = _fileManager.GetUserByEmail(registrationModel.Email);
-            if (existing != null) throw new InvalidOperationException("User already exists.");
+            //validation
+            if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email cannot be empty.");
+            if (string.IsNullOrWhiteSpace(password)) throw new ArgumentException("Password cannot be empty.");
+            if (string.IsNullOrWhiteSpace(firstName)) throw new ArgumentException("First name cannot be empty.");
+            if (string.IsNullOrWhiteSpace(lastName)) throw new ArgumentException("Last name cannot be empty.");
 
-            var account = new Account
+            // check if there is duplicate
+            var existing = _fileManager.GetUserByEmail(email);
+            if (existing != null) throw new InvalidOperationException("User with this email already exists.");
+
+            //create new  user and hash the password
+
+            var client = new Client
             {
                 Id = GenerateNewUserId(),
-                Email = registrationModel.Email,
-                Password = BCrypt.Net.BCrypt.HashPassword(registrationModel.Password),
-                Name = registrationModel.FirstName ?? string.Empty,
-                lasName = registrationModel.LastName ?? string.Empty,
+                Email = email,
+                Password = BCrypt.Net.BCrypt.HashPassword(password),
+                Name = firstName,
+                lasName = lastName,
                 isVerified = false
             };
-
-            _fileManager.AddUser(account);
-            var result = new UserModel(account.Id, account.Email ?? string.Empty, account.Name, account.lasName, account.isVerified);
-            return result;
+            _fileManager.AddUser(client);
+            return client;
         }
 
-        public bool VerifyPassword(string email, string password)
-        {
-            var account = _fileManager.GetUserByEmail(email);
-            if (account == null) return false;
-            var ok = BCrypt.Net.BCrypt.Verify(password, account.Password);
-            return ok;
-        }
-
-        public UserModel? Login(string email, string password)
-        {
-            var account = _fileManager.GetUserByEmail(email);
-            if (account == null) return null;
-            var ok = BCrypt.Net.BCrypt.Verify(password, account.Password);
-            if (!ok) return null;
-            return new UserModel(account.Id, account.Email ?? string.Empty, account.Name, account.lasName, account.isVerified);
-        }
-
+        //method to generate new user id 
         private int GenerateNewUserId()
         {
             var users = _fileManager.GetAllUsers();
-            if (users == null || users.Count == 0) return 1;
+            if (users == null || users.Count == 0) return 1; 
             return users.Max(u => u.Id) + 1;
+        }
+
+        //method to verify password
+        public bool VerifyPassword(string email, string password)
+        {
+            // searching for user by email
+            var user = _fileManager.GetUserByEmail(email);
+            if (user == null) throw new InvalidOperationException("User not found.");
+
+            // compare the hashed password
+            return BCrypt.Net.BCrypt.Verify(password, user.Password);
+        }
+        public User? Login(string email, string password)
+        {
+            //search for user by email
+            var user = _fileManager.GetUserByEmail(email);
+            if (user == null) throw new InvalidOperationException("User not found.");
+
+            //check the password
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
+            if(!isPasswordValid) throw new InvalidOperationException("Invalid password.");
+
+            //return the user if login is successful
+            return user;
         }
     }
 }

@@ -1,19 +1,43 @@
-﻿using Core.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 
 namespace Core.Models
 {
     public class Account
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string lasName { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string VerificationCode { get; set; }
-        public bool isVerified { get; set; }
-        public Roles Role { get; set; }
+        // ბალანსი დაცულია: წაკითხვა (get) საჯაროა, ჩაწერა (set) - დახურული
+        public decimal Balance { get; private set; }
+
+        public Account(decimal initialBalance = 0)
+        {
+            Balance = initialBalance;
+        }
+
+        // თანხის შეტანის მეთოდი
+        public void Deposit(decimal amount)
+        {
+            if (amount <= 0)
+            {
+                throw new ArgumentException("შესატანი თანხა უნდა იყოს დადებითი რიცხვი.");
+            }
+
+            Balance += amount;
+        }
+
+        // თანხის გატანის მეთოდი
+        public bool Withdraw(decimal amount)
+        {
+            if (amount <= 0)
+            {
+                throw new ArgumentException("გასატანი თანხა უნდა იყოს დადებითი რიცხვი.");
+            }
+
+            if (Balance < amount)
+            {
+                return false; // ანგარიშზე არ არის საკმარისი თანხა
+            }
+
+            Balance -= amount;
+            return true;
+        }
     }
 }

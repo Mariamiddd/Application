@@ -55,11 +55,9 @@ namespace UI
             Console.Write("Last name (optional): ");
             var last = Console.ReadLine();
 
-            var model = new RegistrationModel(email, password, first, last);
-
             try
             {
-                var user = _auth.Register(model);
+                var user = _auth.Register(email, password, first ?? string.Empty, last ?? string.Empty);
                 Console.WriteLine($"\nUser registered. Id: {user.Id}, Email: {user.Email}");
             }
             catch (ArgumentException ex)

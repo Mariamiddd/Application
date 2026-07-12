@@ -8,14 +8,13 @@ namespace Core.Interfaces
 {
     public interface IFileManager
     {
-        List<Account> GetAllUsers();
-        Account GetUserById(int id);
-        Account GetUserByEmail(string email);
+        List<User> GetAllUsers();
+        User GetUserById(int id);
+        User GetUserByEmail(string email);
 
-        void AddUser(Account user);
-        void RemoveUser(Account user);
+        void AddUser(User user);
         void DeleteUser(int id);
-        void UpdateUser(Account user);
+        void UpdateUser(User user);
         void SaveChanges();
 
     }
