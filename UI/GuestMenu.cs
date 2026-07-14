@@ -1,46 +1,43 @@
-using System;
+﻿using System;
 using System.Text;
 using System.Text.RegularExpressions;
 using Application.InterfaceServices;
 
 namespace UI
 {
-    public class ConsoleUI
+    internal class GuestMenu
     {
         private readonly IAuthService _auth;
-        private UserModel? _currentUser; //storing currect user in memory
-        private readonly GuestMenu _guestMenu;
-        private readonly AdminMenu _adminMenu;
 
-        public ConsoleUI(IAuthService auth) 
+        public GuestMenu(IAuthService auth)
         {
             _auth = auth;
-            _guestMenu = new GuestMenu(_auth);
-            _adminMenu = new AdminMenu();
         }
 
-        public void Run()
+        // Show guest menu, return logged in user or null
+        public UserModel? Show()
         {
-            while (true)
+            Console.Clear();
+            Console.WriteLine("=== Guest Menu ===");
+            Console.WriteLine("1) Register");
+            Console.WriteLine("2) Login");
+            Console.WriteLine("0) Exit");
+            Console.Write("Option: ");
+
+            var choice = Console.ReadLine();
+            switch (choice)
             {
-                if (_currentUser == null)
-                {
-                    var user = _guestMenu.Show();
-                    if (user != null) _currentUser = user;
-                }
-                else
-                {
-                    var logout = _adminMenu.Show(_currentUser);
-                    if (logout) _currentUser = null;
-                }
+                case "1": return DoRegister();
+                case "2": return DoLogin();
+                case "0": Environment.Exit(0); return null;
+                default:
+                    Console.WriteLine("Invalid.");
+                    Console.ReadKey();
+                    return null;
             }
         }
 
-
-
-        // Guest/Admin menus moved to separate classes (GuestMenu, AdminMenu)
-
-        private void DoLogin()
+        private UserModel? DoLogin()
         {
             Console.Write("Email: ");
             var email = Console.ReadLine() ?? "";
@@ -50,29 +47,28 @@ namespace UI
             var user = _auth.Login(email, password);
             if (user != null)
             {
-                _currentUser = new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
                 Console.WriteLine("Login successful.");
+                Console.ReadKey();
+                return new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
             }
-            else
-            {
-                Console.WriteLine("Invalid credentials.");
-            }
+
+            Console.WriteLine("Invalid credentials.");
             Console.ReadKey();
+            return null;
         }
 
-        private void DoRegister()
+        private UserModel? DoRegister()
         {
             Console.Write("Email: ");
             var email = Console.ReadLine() ?? string.Empty;
 
-            // basic gmail validation: local part allowed chars and domain must be gmail.com
             var gmailPattern = new Regex("^[A-Za-z0-9._%+-]+@gmail\\.com$", RegexOptions.IgnoreCase);
             if (!gmailPattern.IsMatch(email))
             {
                 Console.WriteLine("\nInvalid Gmail address. Please enter a valid address ending with @gmail.com and containing only letters, numbers and . _ % + - characters.");
                 Console.WriteLine("Press any key to return to menu...");
                 Console.ReadKey();
-                return;
+                return null;
             }
 
             Console.Write("Password: ");
@@ -87,9 +83,9 @@ namespace UI
             try
             {
                 var user = _auth.Register(email, password, first ?? string.Empty, last ?? string.Empty);
-                // map domain user to lightweight UserModel used by UI
-                _currentUser = new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
                 Console.WriteLine("\nRegistration successful. You are now logged in.");
+                Console.ReadKey();
+                return new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
             }
             catch (ArgumentException ex)
             {
@@ -106,6 +102,7 @@ namespace UI
 
             Console.WriteLine("\nPress any key to continue...");
             Console.ReadKey();
+            return null;
         }
 
         private static string ReadPassword()
