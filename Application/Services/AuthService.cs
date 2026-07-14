@@ -38,7 +38,7 @@ namespace Application.Services
                 Email = email,
                 Password = BCrypt.Net.BCrypt.HashPassword(password),
                 Name = firstName,
-                lasName = lastName,
+                lastName = lastName,
                 isVerified = false
             };
             _fileManager.AddUser(client);

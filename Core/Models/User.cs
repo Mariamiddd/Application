@@ -9,22 +9,16 @@ namespace Core.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string lasName { get; set; }
+        public string lastName { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
         public string VerificationCode { get; set; }
         public bool isVerified { get; set; }
         public Roles Role { get; set; }
-
+        // Base virtual menu method so derived classes can override it
         public virtual void DisplayMenu()
         {
-            Console.WriteLine("\n--- Client's Menu ---");
-            Console.WriteLine("1. Check Balance");
-            Console.WriteLine("2. Deposit Funds");
-            Console.WriteLine("3. Withdraw Funds");
-            Console.WriteLine("4. Apply for Loan");
-            Console.WriteLine("5. Logout");
-
+            // default implementation (can be overridden)
         }
     }
 }

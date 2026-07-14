@@ -1,3 +1,5 @@
 {"Id":1,"Name":null,"lasName":null,"Email":"John doe","Password":"$2a$11$xjJVRueApw8mVbS/YnKxVevGhLGcX3uNFk40WD/Uv/gdPSuJXxF1m","VerificationCode":null,"isVerified":false,"Role":0}
 {"Id":2,"Name":"dss","lasName":"ds","Email":"hjkl;@gmail.com","Password":"$2a$11$6QfGfcUDoFzxZJ1gQFvSnedlMRtd1AqiV3w7VIJMQrB9uC.o/cgYK","VerificationCode":null,"isVerified":false,"Role":0}
 {"Id":3,"Name":"1","lasName":"1","Email":"1","Password":"$2a$11$KLiOs185zEOtQio9nhYaNeZqQV8VyivJPzDcOr0.PwwNMn6Nyk2Fi","VerificationCode":null,"isVerified":false,"Role":0}
+{"Id":1,"Name":"de","lastName":"de","Email":"jan","Password":"$2a$11$M93g9ENdIf3B5DUvFC8XUOytzOenN9/CHsn4MZqKdJUDExFofE.QW","VerificationCode":null,"isVerified":false,"Role":1,"$type":"Client"}
+{"Id":2,"Name":"de","lastName":"de","Email":"gdve@gmail.com","Password":"$2a$11$3ZoR7GxGZgcgcgHExBMKMe/WAZgMCQaicD/dRWDSx/7pCxSR9uw9C","VerificationCode":null,"isVerified":false,"Role":1,"$type":"Client"}

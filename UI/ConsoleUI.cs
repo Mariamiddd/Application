@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Text.RegularExpressions;
 using Application.InterfaceServices;
 
 namespace UI
@@ -7,44 +8,92 @@ namespace UI
     public class ConsoleUI
     {
         private readonly IAuthService _auth;
+        private UserModel? _currentUser; //storing currect user in memory
 
-        public ConsoleUI(IAuthService auth) => _auth = auth;
+        public ConsoleUI(IAuthService auth)
+        {
+            _auth = auth;
+        }
+
         public void ShowMainMenu()
         {
             while (true)
             {
-                Console.Clear();
-                Console.WriteLine("Main menu");
-                Console.WriteLine("1) Register");
-                Console.WriteLine("2) Login");
-                Console.WriteLine("0) Exit");
-                Console.Write("Choose an option: ");
-                var choice = Console.ReadLine() ?? string.Empty;
-
-                switch (choice.Trim())
+                if (_currentUser != null)
                 {
-                    case "1":
-                        DoRegister();
-                        break;
-                    case "2":
-                        DoLogin();
-                        break;
-                    case "0":
-                        return;
-                    default:
-                        Console.WriteLine("Invalid option. Press any key to continue...");
-                        Console.ReadKey();
-                        break;
+                    ShowUserMenu();
+                }
+                else
+                {
+                    ShowGuestMenu();
                 }
             }
         }
 
-        private void DoRegister()
+        private void ShowGuestMenu()
         {
             Console.Clear();
-            Console.WriteLine("Register a new user");
+            Console.WriteLine("=== Guest Menu ===");
+            Console.WriteLine("1) Register");
+            Console.WriteLine("2) Login");
+            Console.WriteLine("0) Exit");
+            Console.Write("Option: ");
+
+            var choice = Console.ReadLine();
+            switch (choice)
+            {
+                case "1": DoRegister(); break;
+                case "2": DoLogin(); break;
+                case "0": Environment.Exit(0); break;
+                default: Console.WriteLine("Invalid."); Console.ReadKey(); break;
+            }
+        }
+
+        private void ShowUserMenu()
+        {
+            Console.Clear();
+            Console.WriteLine($"Logged in as: {_currentUser?.Email}");
+            Console.WriteLine("1) Logout");
+            Console.Write("Option: ");
+
+            var choice = Console.ReadLine();
+            if (choice == "1") _currentUser = null;
+        }
+
+        private void DoLogin()
+        {
+            Console.Write("Email: ");
+            var email = Console.ReadLine() ?? "";
+            Console.Write("Password: ");
+            var password = ReadPassword();
+
+            var user = _auth.Login(email, password);
+            if (user != null)
+            {
+                _currentUser = new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
+                Console.WriteLine("Login successful.");
+            }
+            else
+            {
+                Console.WriteLine("Invalid credentials.");
+            }
+            Console.ReadKey();
+        }
+
+        private void DoRegister()
+        {
             Console.Write("Email: ");
             var email = Console.ReadLine() ?? string.Empty;
+
+            // basic gmail validation: local part allowed chars and domain must be gmail.com
+            var gmailPattern = new Regex("^[A-Za-z0-9._%+-]+@gmail\\.com$", RegexOptions.IgnoreCase);
+            if (!gmailPattern.IsMatch(email))
+            {
+                Console.WriteLine("\nInvalid Gmail address. Please enter a valid address ending with @gmail.com and containing only letters, numbers and . _ % + - characters.");
+                Console.WriteLine("Press any key to return to menu...");
+                Console.ReadKey();
+                return;
+            }
 
             Console.Write("Password: ");
             var password = ReadPassword();
@@ -58,7 +107,9 @@ namespace UI
             try
             {
                 var user = _auth.Register(email, password, first ?? string.Empty, last ?? string.Empty);
-                Console.WriteLine($"\nUser registered. Id: {user.Id}, Email: {user.Email}");
+                // map domain user to lightweight UserModel used by UI
+                _currentUser = new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
+                Console.WriteLine("\nRegistration successful. You are now logged in.");
             }
             catch (ArgumentException ex)
             {
@@ -73,37 +124,7 @@ namespace UI
                 Console.WriteLine($"\nUnexpected error: {ex.Message}");
             }
 
-            Console.WriteLine("\nPress any key to return to menu...");
-            Console.ReadKey();
-        }
-
-        private void DoLogin()
-        {
-            Console.Clear();
-            Console.WriteLine("Login");
-            Console.Write("Email: ");
-            var email = Console.ReadLine() ?? string.Empty;
-            Console.Write("Password: ");
-            var password = ReadPassword();
-
-            try
-            {
-                var user = _auth.Login(email, password);
-                if (user is null)
-                {
-                    Console.WriteLine("\nLogin failed: invalid credentials.");
-                }
-                else
-                {
-                    Console.WriteLine($"\nLogin successful. Id: {user.Id}, Email: {user.Email}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"\nUnexpected error: {ex.Message}");
-            }
-
-            Console.WriteLine("\nPress any key to return to menu...");
+            Console.WriteLine("\nPress any key to continue...");
             Console.ReadKey();
         }
 

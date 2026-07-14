@@ -16,13 +16,39 @@ namespace Repository.Data
     // ifilemanager implementation in file repository
     public class FileRepository : IFileManager
     {
-        private readonly string _filePath = Path.Combine(Directory.GetCurrentDirectory(), "users.json");
+        // Try to resolve the repository data file inside the solution directory (Repository/Data/users.json).
+        // If resolution fails, fall back to current directory.
+        private readonly string _filePath;
 
         private readonly JsonSerializerOptions _options = new JsonSerializerOptions
         {
-            WriteIndented = true,
+            // ensure each record is serialized to a single line so file can be read line-by-line
+            WriteIndented = false,
             ReferenceHandler = ReferenceHandler.IgnoreCycles
         };
+        public FileRepository()
+        {
+            // Attempt to locate the solution root by walking up from the runtime base directory.
+            var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory!);
+            while (dir != null && !System.IO.File.Exists(Path.Combine(dir.FullName, "Application.slnx")))
+            {
+                dir = dir.Parent;
+            }
+
+            if (dir != null)
+            {
+                var repoDir = Path.Combine(dir.FullName, "Repository", "Data");
+                if (!Directory.Exists(repoDir)) Directory.CreateDirectory(repoDir);
+                _filePath = Path.Combine(repoDir, "users.json");
+            }
+            else
+            {
+                // fallback to current directory
+                var fallbackDir = Directory.GetCurrentDirectory();
+                _filePath = Path.Combine(fallbackDir, "users.json");
+            }
+        }
+
         public void AddUser(User user)
         {
             var jsonObject = JsonSerializer.SerializeToElement(user, _options);
@@ -30,6 +56,9 @@ namespace Repository.Data
             dict["$type"] = user.GetType().Name;
 
             var line = JsonSerializer.Serialize(dict, _options);
+            // ensure directory exists
+            var folder = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(folder) && !Directory.Exists(folder)) Directory.CreateDirectory(folder);
             File.AppendAllText(_filePath, line + Environment.NewLine);
         }
 
@@ -50,17 +79,46 @@ namespace Repository.Data
             string[] lines = File.ReadAllLines(_filePath);
             List<User> users = new List<User>();
 
-            foreach (var line in lines)
+            foreach (var rawLine in lines)
             {
-                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (string.IsNullOrWhiteSpace(rawLine)) continue;
 
-                var jsonDoc = JsonDocument.Parse(line);
-                var type = jsonDoc.RootElement.GetProperty("$type").GetString();
+                // Trim and remove BOM if present
+                var line = rawLine.Trim();
+                if (line.Length > 0 && line[0] == '\uFEFF') line = line.Substring(1);
 
-                if (type == nameof(Client))
-                    users.Add(JsonSerializer.Deserialize<Client>(line));
-                else if (type == nameof(Admin))
-                    users.Add(JsonSerializer.Deserialize<Admin>(line));
+                try
+                {
+                    using var jsonDoc = JsonDocument.Parse(line);
+                    if (!jsonDoc.RootElement.TryGetProperty("$type", out var typeProp))
+                    {
+                        // missing type marker - skip
+                        continue;
+                    }
+
+                    var type = typeProp.GetString();
+                    if (type == nameof(Client))
+                    {
+                        var obj = JsonSerializer.Deserialize<Client>(line, _options);
+                        if (obj != null) users.Add(obj);
+                    }
+                    else if (type == nameof(Admin))
+                    {
+                        var obj = JsonSerializer.Deserialize<Admin>(line, _options);
+                        if (obj != null) users.Add(obj);
+                    }
+                    // unknown type -> skip
+                }
+                catch (JsonException)
+                {
+                    // skip malformed line
+                    continue;
+                }
+                catch
+                {
+                    // skip any unexpected error for robustness
+                    continue;
+                }
             }
             return users;
         }
