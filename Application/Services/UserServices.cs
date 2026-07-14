@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using Application.InterfaceServices;
 using Core.Interfaces;
@@ -8,6 +7,7 @@ using Core.Models;
 
 namespace Application.Services
 {
+    // UserServices implements IUserService and provides methods to manage users using IFileManager
     public class UserServices : IUserService
     {
         private readonly IFileManager _fileManager;
@@ -48,10 +48,7 @@ namespace Application.Services
         }
         public void Update(User user)
         {
-            var existingUser = GetById(user.Id);
-            if (existingUser == null) {
-                throw new KeyNotFoundException($"User with id {user.Id} not found.");
-            }
+            var existingUser = GetById(user.Id) ?? throw new KeyNotFoundException($"User with id {user.Id} not found.");
             _fileManager.UpdateUser(user);
         }
 

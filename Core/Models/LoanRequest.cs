@@ -13,28 +13,28 @@ namespace Core.Models
             public decimal Income { get; set; }
             public LoanStatus Status { get; set; }
 
-            // კონსტრუქტორი
-            public LoanRequest(int clientId, decimal amount, decimal income)
+        // constructor to initialize a new loan request
+        public LoanRequest(int clientId, decimal amount, decimal income)
             {
                 ClientId = clientId;
                 Amount = amount;
                 Income = income;
-                Status = LoanStatus.Pending; // თავდაპირველად ყოველთვის მოლოდინშია
-            }
+                Status = LoanStatus.Pending; // default status when a new loan request is created
+        }
 
         public bool IsLoanSafe()
         {
-            // 1. მუდმივები (კონსტანტები) - შეგვიძლია მოგვიანებით შევცვალოთ
-            const decimal livingWage = 300m; // საარსებო მინიმუმი 
-            const int maxMonths = 36;        // სესხის მაქსიმალური ვადა
+            // 1. constants for living wage and maximum loan term/ can be uupdated later!!
+            const decimal livingWage = 300m; // minimum monthly income required for basic living expenses
+            const int maxMonths = 36;        // maximum loan term in months
 
-            // 2. ყოველთვიური გადასახადი (პროცენტის გარეშე, მარტივი ლოგიკით)
+            // 2. calculate the monthly payment for the loan/ simple logic can be improved later too!
             decimal monthlyPayment = Amount / maxMonths;
 
-            // 3. ხელზე დარჩენილი თანხა საარსებო მინიმუმის გამოკლების შემდეგ
+            // 3. calculate the remaining income after deducting the living wage
             decimal remainingIncome = Income - livingWage;
 
-            // 4. ვაბრუნებთ შედეგს: ფარავს თუ არა დარჩენილი თანხა ყოველთვიურ შენატანს?
+            // 4. if remaining income is greater than or equal to the monthly payment, the loan is considered safe
             return remainingIncome >= monthlyPayment;
         }
     }

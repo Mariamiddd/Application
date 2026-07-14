@@ -41,6 +41,12 @@ namespace Application.Services
                 lastName = lastName,
                 isVerified = false
             };
+
+            // ensure client has a bank account for balance tracking
+            if (client.BankAccount == null)
+            {
+                client.BankAccount = new Account();
+            }
             _fileManager.AddUser(client);
             return client;
         }
@@ -58,22 +64,19 @@ namespace Application.Services
         {
             // searching for user by email
             var user = _fileManager.GetUserByEmail(email);
-            if (user == null) throw new InvalidOperationException("User not found.");
+            if (user == null) return false;
 
-            // compare the hashed password
             return BCrypt.Net.BCrypt.Verify(password, user.Password);
         }
         public User? Login(string email, string password)
         {
             //search for user by email
             var user = _fileManager.GetUserByEmail(email);
-            if (user == null) throw new InvalidOperationException("User not found.");
+            if (user == null) return null;
 
-            //check the password
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
-            if(!isPasswordValid) throw new InvalidOperationException("Invalid password.");
+            var isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
+            if (!isPasswordValid) return null;
 
-            //return the user if login is successful
             return user;
         }
     }

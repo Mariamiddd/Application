@@ -13,7 +13,7 @@ namespace UI
             IFileManager repository = new FileRepository();
             IAuthService authService = new AuthService(repository);
 
-            var ui = new ConsoleUI(authService);
+            var ui = new ConsoleUI(authService, repository, new UI.Helpers.ConsoleWrapper());
             var app = new App(ui);
             app.Run();
         }

@@ -6,6 +6,7 @@ using Core.Models;
 
 namespace Core.Interfaces
 {
+    // This interface defines the contract for a file manager that handles user data operations.
     public interface IFileManager
     {
         List<User> GetAllUsers();

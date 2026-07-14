@@ -5,14 +5,14 @@ using System.Text;
 
 namespace Core.Models
 {
-   
-        // Admin მემკვიდრეობით იღებს User-ის თვისებებს
-        public class Admin : User
+
+    // Admin inherits from User and has additional functionalities specific to admin users
+    public class Admin : User
         {
             public Admin()
             {
-                // ადმინის ობიექტის შექმნისთანავე ენიჭება ადმინის როლი
-                Role = Roles.Admin;
+            // from the moment admin is created, we set the role to Admin
+            Role = Roles.Admin;
             }
         public void ProcessLoan(LoanRequest request, Client client)
         {
@@ -35,7 +35,7 @@ namespace Core.Models
         {
             Console.WriteLine("\n--- Admin's Menu ---");
             Console.WriteLine("1. Process Loan Requests (Approve/Reject)");
-            Console.WriteLine("2. Logout");
+            Console.WriteLine("0. Logout");
         }
 
 

@@ -1,19 +1,40 @@
 ﻿using System;
-using Application.InterfaceServices;
+using Core.Models;
 
 namespace UI
 {
     internal class AdminMenu
     {
-        public bool Show(UserModel user)
-        {
-            Console.Clear();
-            Console.WriteLine($"Logged in as: {user.Email}");
-            Console.WriteLine("1) Logout");
-            Console.Write("Option: ");
+        private readonly Interfaces.IConsole _console;
 
-            var choice = Console.ReadLine();
-            if (choice == "1") return true; // request logout
+        public AdminMenu(Interfaces.IConsole console)
+        {
+            _console = console;
+        }
+
+        // Show menu for any logged-in user. If returns true, request logout.
+        public bool Show(User user)
+        {
+            // Clear the console and display the logged-in user's email
+            _console.Clear();
+            _console.WriteLine($"Logged in as: {user.Email}");
+
+            // Display the menu options based on the user's role
+            user.DisplayMenu();
+
+            _console.Write("Option: ");
+            var choice = _console.ReadLine();
+
+            // Basic logout handling same for both admin and client
+            if (choice == MenuKeys.Logout)
+            {
+                return true;
+            }
+
+            // other actions will be implemented soon
+            _console.WriteLine("Option handling not implemented yet.");
+            _console.WriteLine("Press any key to continue...");
+            _console.ReadKey(true);
             return false;
         }
     }

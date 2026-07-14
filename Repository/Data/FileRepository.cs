@@ -47,15 +47,22 @@ namespace Repository.Data
                 var fallbackDir = Directory.GetCurrentDirectory();
                 _filePath = Path.Combine(fallbackDir, "users.json");
             }
+            Log($"FileRepository initialized. Using data file: {_filePath}");
         }
 
         public void AddUser(User user)
         {
-            var jsonObject = JsonSerializer.SerializeToElement(user, _options);
-            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonObject.GetRawText(), _options) ?? new Dictionary<string, object>();
-            dict["$type"] = user.GetType().Name;
-
-            var line = JsonSerializer.Serialize(dict, _options);
+            try
+            {
+                var raw = JsonSerializer.Serialize((object)user, user.GetType(), _options);
+                Log($"AddUser raw serialization for id={user.Id}: {raw}");
+            }
+            catch (Exception ex)
+            {
+                Log($"AddUser raw serialize error: {ex}");
+            }
+            var line = SerializeWithType(user);
+            Log($"AddUser final line for id={user.Id}: {line}");
             // ensure directory exists
             var folder = Path.GetDirectoryName(_filePath);
             if (!string.IsNullOrEmpty(folder) && !Directory.Exists(folder)) Directory.CreateDirectory(folder);
@@ -100,7 +107,11 @@ namespace Repository.Data
                     if (type == nameof(Client))
                     {
                         var obj = JsonSerializer.Deserialize<Client>(line, _options);
-                        if (obj != null) users.Add(obj);
+                        if (obj != null)
+                        {
+                            if (obj.BankAccount == null) obj.BankAccount = new Core.Models.Account();
+                            users.Add(obj);
+                        }
                     }
                     else if (type == nameof(Admin))
                     {
@@ -147,7 +158,16 @@ namespace Repository.Data
 
         public void SaveChanges()
         {
-            
+            // Persist current users to the file. This rewrites the entire file atomically.
+            try
+            {
+                var users = GetAllUsers();
+                SaveAll(users);
+            }
+            catch
+            {
+                // swallow to preserve previous behavior; callers may handle errors
+            }
         }
 
         public void UpdateUser(User user)
@@ -157,6 +177,15 @@ namespace Repository.Data
             if (index != -1)
             {
                 users[index] = user;
+                try
+                {
+                    var debugJson = SerializeWithType(user);
+                    Log($"UpdateUser writing user id={user.Id}: {debugJson}");
+                }
+                catch (Exception ex)
+                {
+                    Log($"UpdateUser serialize error: {ex}");
+                }
                 SaveAll(users);
             }
 
@@ -166,14 +195,57 @@ namespace Repository.Data
         private void SaveAll(List<User> users)
         {
             var lines = new List<string>();
+            if (users == null || users.Count == 0)
+            {
+                Log("SaveAll called with empty users list; skipping file write to avoid data loss.");
+                return;
+            }
             foreach (var u in users)
             {
-                var jsonObject = JsonSerializer.SerializeToElement(u, _options);
-                var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonObject.GetRawText(), _options) ?? new Dictionary<string, object>();
-                dict["$type"] = u.GetType().Name;
-                lines.Add(JsonSerializer.Serialize(dict, _options));
+                lines.Add(SerializeWithType(u));
             }
-            File.WriteAllLines(_filePath, lines);
+            try
+            {
+                File.WriteAllLines(_filePath, lines);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to write all users to file: {ex}");
+            }
+        }
+
+        private string SerializeWithType(User user)
+        {
+            // serialize user to JSON, then write a new object merging all properties and adding $type
+            var json = JsonSerializer.Serialize((object)user, user.GetType(), _options);
+            using var doc = JsonDocument.Parse(json);
+            using var ms = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(ms, new JsonWriterOptions { Indented = false }))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    prop.WriteTo(writer);
+                }
+                writer.WriteString("$type", user.GetType().Name);
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(ms.ToArray());
+        }
+
+        private void Log(string message)
+        {
+            try
+            {
+                var folder = Path.GetDirectoryName(_filePath) ?? Directory.GetCurrentDirectory();
+                var logPath = Path.Combine(folder, "file_repo.log");
+                var line = $"[{DateTime.UtcNow:O}] {message}{Environment.NewLine}";
+                File.AppendAllText(logPath, line);
+            }
+            catch
+            {
+                // ignore logging errors
+            }
         }
 
     }

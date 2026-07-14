@@ -6,6 +6,7 @@ namespace Application.InterfaceServices
     
     public interface IAuthService
     {
+        // register, login objects, verify password bool
         User Register(string email, string password, string firstName, string lastName);
         User? Login(string email, string password);
         bool VerifyPassword(string email, string password);

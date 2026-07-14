@@ -4,36 +4,36 @@ namespace Core.Models
 {
     public class Account
     {
-        // ბალანსი დაცულია: წაკითხვა (get) საჯაროა, ჩაწერა (set) - დახურული
-        public decimal Balance { get; private set; }
+        // Balance has a public setter so serializers can set the value during deserialization
+        public decimal Balance { get; set; }
 
         public Account(decimal initialBalance = 0)
         {
             Balance = initialBalance;
         }
 
-        // თანხის შეტანის მეთოდი
+        // method to deposit money into the account
         public void Deposit(decimal amount)
         {
             if (amount <= 0)
             {
-                throw new ArgumentException("შესატანი თანხა უნდა იყოს დადებითი რიცხვი.");
+                throw new ArgumentException("Deposit amount must be a positive number.");
             }
 
             Balance += amount;
         }
 
-        // თანხის გატანის მეთოდი
+        // method to withdraw money from the account
         public bool Withdraw(decimal amount)
         {
             if (amount <= 0)
             {
-                throw new ArgumentException("გასატანი თანხა უნდა იყოს დადებითი რიცხვი.");
+                throw new ArgumentException("Withdrawal amount must be a positive number.");
             }
 
             if (Balance < amount)
             {
-                return false; // ანგარიშზე არ არის საკმარისი თანხა
+                return false; // balance is insufficient for the withdrawal
             }
 
             Balance -= amount;

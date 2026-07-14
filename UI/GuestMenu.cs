@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using System.Text.RegularExpressions;
 using Application.InterfaceServices;
 
@@ -8,23 +7,25 @@ namespace UI
     internal class GuestMenu
     {
         private readonly IAuthService _auth;
+        private readonly UI.Interfaces.IConsole _console;
 
-        public GuestMenu(IAuthService auth)
+        public GuestMenu(IAuthService auth, UI.Interfaces.IConsole console)
         {
             _auth = auth;
+            _console = console;
         }
 
-        // Show guest menu, return logged in user or null
-        public UserModel? Show()
+        // Show guest menu, return logged in domain User or null
+        public Core.Models.User? Show()
         {
-            Console.Clear();
-            Console.WriteLine("=== Guest Menu ===");
-            Console.WriteLine("1) Register");
-            Console.WriteLine("2) Login");
-            Console.WriteLine("0) Exit");
-            Console.Write("Option: ");
+            _console.Clear();
+            _console.WriteLine("=== Guest Menu ===");
+            _console.WriteLine("1) Register");
+            _console.WriteLine("2) Login");
+            _console.WriteLine("0) Exit");
+            _console.Write("Option: ");
 
-            var choice = Console.ReadLine();
+            var choice = _console.ReadLine();
             switch (choice)
             {
                 case "1": return DoRegister();
@@ -37,30 +38,29 @@ namespace UI
             }
         }
 
-        private UserModel? DoLogin()
+        private Core.Models.User? DoLogin()
         {
             Console.Write("Email: ");
             var email = Console.ReadLine() ?? "";
             Console.Write("Password: ");
-            var password = ReadPassword();
+            var password = UI.Helpers.InputHelpers.ReadPassword();
 
             var user = _auth.Login(email, password);
             if (user != null)
             {
-                Console.WriteLine("Login successful.");
-                Console.ReadKey();
-                return new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
+                _console.WriteLine("Login successful.");
+                _console.ReadKey(true);
+                return user; // return domain user for polymorphic menus
             }
-
-            Console.WriteLine("Invalid credentials.");
-            Console.ReadKey();
+            _console.WriteLine("Invalid credentials.");
+            _console.ReadKey(true);
             return null;
         }
 
-        private UserModel? DoRegister()
+        private Core.Models.User? DoRegister()
         {
-            Console.Write("Email: ");
-            var email = Console.ReadLine() ?? string.Empty;
+            _console.Write("Email: ");
+            var email = _console.ReadLine() ?? string.Empty;
 
             var gmailPattern = new Regex("^[A-Za-z0-9._%+-]+@gmail\\.com$", RegexOptions.IgnoreCase);
             if (!gmailPattern.IsMatch(email))
@@ -72,58 +72,39 @@ namespace UI
             }
 
             Console.Write("Password: ");
-            var password = ReadPassword();
+            var password = UI.Helpers.InputHelpers.ReadPassword();
 
-            Console.Write("First name (optional): ");
-            var first = Console.ReadLine();
+            _console.Write("First name (optional): ");
+            var first = _console.ReadLine();
 
-            Console.Write("Last name (optional): ");
-            var last = Console.ReadLine();
+            _console.Write("Last name (optional): ");
+            var last = _console.ReadLine();
 
             try
             {
                 var user = _auth.Register(email, password, first ?? string.Empty, last ?? string.Empty);
-                Console.WriteLine("\nRegistration successful. You are now logged in.");
-                Console.ReadKey();
-                return new UserModel(user.Id, user.Email ?? string.Empty, user.Name, user.lastName, user.isVerified);
+                _console.WriteLine("\nRegistration successful. You are now logged in.");
+                _console.ReadKey(true);
+                return user; // return domain user
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine($"\nValidation error: {ex.Message}");
+                _console.WriteLine($"\nValidation error: {ex.Message}");
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"\nRegistration failed: {ex.Message}");
+                _console.WriteLine($"\nRegistration failed: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\nUnexpected error: {ex.Message}");
+                _console.WriteLine($"\nUnexpected error: {ex.Message}");
             }
 
-            Console.WriteLine("\nPress any key to continue...");
-            Console.ReadKey();
+            _console.WriteLine("\nPress any key to continue...");
+            _console.ReadKey(true);
             return null;
         }
 
-        private static string ReadPassword()
-        {
-            var sb = new StringBuilder();
-            ConsoleKeyInfo key;
-            while ((key = Console.ReadKey(true)).Key != ConsoleKey.Enter)
-            {
-                if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
-                {
-                    sb.Length--;
-                    Console.Write("\b \b");
-                }
-                else if (!char.IsControl(key.KeyChar))
-                {
-                    sb.Append(key.KeyChar);
-                    Console.Write('*');
-                }
-            }
-            Console.WriteLine();
-            return sb.ToString();
-        }
+
     }
 }

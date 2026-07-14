@@ -26,7 +26,7 @@ namespace Core.Models
             Console.WriteLine("2. Deposit Funds");
             Console.WriteLine("3. Withdraw Funds");
             Console.WriteLine("4. Apply for Loan");
-            Console.WriteLine("5. Logout");
+            Console.WriteLine("0. Logout");
             
         } 
 
