@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Application.InterfaceServices;
 
 namespace UI
@@ -6,40 +7,43 @@ namespace UI
     public class ConsoleUI
     {
         private readonly IAuthService _auth;
-        private Core.Models.User? _currentUser; //storing current domain user in memory (polymorphic)
+        // current user is null if not logged in, otherwise holds the logged in domain user
+        private Core.Models.User? _currentUser; 
         private readonly GuestMenu _guestMenu;
         private readonly AdminMenu _adminMenu;
         private readonly UserMenu _userMenu;
 
+        // constructor with dependency injection for auth service, file manager, and optional console interface
         public ConsoleUI(IAuthService auth, Core.Interfaces.IFileManager fileManager, UI.Interfaces.IConsole? console = null) 
         {
-            _auth = auth;
+            _auth = auth;  
             var c = console ?? new UI.Helpers.ConsoleWrapper();
             _guestMenu = new GuestMenu(_auth, c);
-            _adminMenu = new AdminMenu(c);
+            _adminMenu = new AdminMenu(c, fileManager);
             _userMenu = new UserMenu(fileManager, c);
         }
 
-        public void Run()
+        // main loop to run the console UI
+        public async Task RunAsync()
         {
             while (true)
             {
                 if (_currentUser == null)
                 {
-                    var user = _guestMenu.Show();
+                    var user = await _guestMenu.ShowAsync();
                     if (user != null) _currentUser = user;
                 }
                 else
                 {
-                    // route based on role using polymorphism
+                    // if current user is amin show admin menu, otherwise show user menu
                     if (_currentUser.Role == Core.Enums.Roles.Admin)
                     {
-                        var logout = _adminMenu.Show(_currentUser);
+                        var logout = await _adminMenu.ShowAsync(_currentUser);
                         if (logout) _currentUser = null;
                     }
                     else
                     {
-                        var logout = _userMenu.Show(_currentUser);
+                        var logout = await _userMenu.ShowAsync(_currentUser);
                         if (logout) _currentUser = null;
                     }
                 }

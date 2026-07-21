@@ -1,1 +1,72 @@
-{"BankAccount":{"Balance":0},"Id":1,"Name":"l","lastName":"l","Email":"l@gmail.com","Password":"$2a$11$0fvFgnGwxl89yLczqGiLdeGIisQ2wbWii/JgHx0Mn5geG7dOK69Yi","VerificationCode":null,"isVerified":false,"Role":1,"$type":"Client"}
+[
+  {
+  "BankAccount": {
+    "Balance": 0,
+    "TransactionHistory": []
+  },
+  "Id": 1,
+  "Name": "kkk",
+  "lastName": "kkkkkk",
+  "Email": "kkkkkk@gmail.com",
+  "Password": "$2a$11$vEqnno2n/C0ziT/Sdn6eyOV0/kK1WsijdIwcg4iTJIQklfiZgEfRq",
+  "Role": "client"
+},
+  {
+  "Id": 3,
+  "Name": "admin",
+  "lastName": "joe",
+  "Email": "admini@gmail.com",
+  "Password": "$2a$11$spiuzGlpBIBbZfrq/sFITOzElAK9ItmYVr.pfaVBomM6vlXz1FxHu",
+  "Role": "admin"
+},
+  {
+  "BankAccount": {
+    "Balance": 2222,
+    "TransactionHistory": [
+      {
+        "Type": "Deposit",
+        "Amount": 21,
+        "Date": "2026-07-21T19:26:35.0523048+04:00",
+        "BalanceAfter": 21
+      },
+      {
+        "Type": "Deposit",
+        "Amount": 2222,
+        "Date": "2026-07-21T19:26:37.6668146+04:00",
+        "BalanceAfter": 2243
+      },
+      {
+        "Type": "Withdrawal",
+        "Amount": 21,
+        "Date": "2026-07-21T19:26:42.1458825+04:00",
+        "BalanceAfter": 2222
+      }
+    ]
+  },
+  "Id": 4,
+  "Name": "john",
+  "lastName": "doe",
+  "Email": "johndoe@gmail.com",
+  "Password": "$2a$11$AFneelJHnLh6Jw7zG9I/MO.aG0N4kWBtm4AOs0HwlnipJR.AAEEUy",
+  "Role": "client"
+},
+  {
+  "BankAccount": {
+    "Balance": 212111,
+    "TransactionHistory": [
+      {
+        "Type": "Deposit",
+        "Amount": 212111,
+        "Date": "2026-07-21T19:30:29.2159888+04:00",
+        "BalanceAfter": 212111
+      }
+    ]
+  },
+  "Id": 5,
+  "Name": "jane",
+  "lastName": "doe",
+  "Email": "client@gmail.com",
+  "Password": "$2a$11$cs.VK5eWuoDhNrb9swuIqOgZ9YdaW5wcThEY/bdIrWUPxozO9Shi2",
+  "Role": "client"
+}
+]

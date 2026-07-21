@@ -1,22 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
-using System.Text;
+using System.Threading.Tasks;
 using Core.Models;
 
 namespace Core.Interfaces
 {
-    // This interface defines the contract for a file manager that handles user data operations.
+    // This interface defines the contract for a file manager that handles user data operations. (repository -> data -> filereppsitory)
     public interface IFileManager
     {
-        List<User> GetAllUsers();
-        User GetUserById(int id);
-        User GetUserByEmail(string email);
+        Task<List<User>> GetAllUsersAsync();
+        Task<User?> GetUserByIdAsync(int id);
+        Task<User?> GetUserByEmailAsync(string email);
 
-        void AddUser(User user);
-        void DeleteUser(int id);
-        void UpdateUser(User user);
-        void SaveChanges();
+        Task AddUserAsync(User user);
+        Task DeleteUserAsync(int id);
+        Task UpdateUserAsync(User user);
+
+        // Loan management methods
+        Task<List<LoanRequest>> GetAllLoanRequestsAsync();
+        Task<LoanRequest?> GetLoanRequestByIdAsync(int loanId);
+        Task<List<LoanRequest>> GetLoanRequestsByClientIdAsync(int clientId);
+        Task<List<LoanRequest>> GetPendingLoanRequestsAsync();
+        Task AddLoanRequestAsync(LoanRequest loanRequest);
+        Task UpdateLoanRequestAsync(LoanRequest loanRequest);
+        Task DeleteLoanRequestAsync(int loanId);
 
     }
 }

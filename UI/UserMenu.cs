@@ -1,6 +1,8 @@
-﻿using System;
+using System;
+using System.Threading.Tasks;
 using Core.Models;
 using Core.Interfaces;
+using Core.Enums;
 
 namespace UI
 {
@@ -15,24 +17,26 @@ namespace UI
             _console = console;
         }
 
-        // Show client menu. Returns true if user chose to logout.
-        public bool Show(User user)
+        // user menu for authenticated users
+
+        // return true if user logs out, false otherwise
+        public async Task<bool> ShowAsync(User user)
         {
             _console.Clear();
             _console.WriteLine($"Logged in as: {user.Email}");
 
-            // Use polymorphic display if available
+            // shows the user menu 
             user.DisplayMenu();
 
             _console.Write("Option: ");
             var choice = _console.ReadLine();
 
-            if (choice == MenuKeys.Logout) // logout for client
+            if (choice == "0") // logout
             {
                 return true;
             }
 
-            // Handle a few basic client actions using the file manager
+            // is user a client? if so, cast to Client and perform actions
             if (user is Client client)
             {
                 switch (choice)
@@ -47,8 +51,7 @@ namespace UI
                             try
                             {
                                 client.BankAccount.Deposit(dep);
-                                _fileManager.UpdateUser(client);
-                                _fileManager.SaveChanges();
+                                await _fileManager.UpdateUserAsync(client);
                                 _console.WriteLine("Deposit successful.");
                             }
                             catch (Exception ex)
@@ -70,8 +73,7 @@ namespace UI
                                 var ok = client.BankAccount.Withdraw(w);
                                 if (ok)
                                 {
-                                    _fileManager.UpdateUser(client);
-                                    _fileManager.SaveChanges();
+                                    await _fileManager.UpdateUserAsync(client);
                                     _console.WriteLine("Withdrawal successful.");
                                 }
                                 else
@@ -90,7 +92,10 @@ namespace UI
                         }
                         break;
                     case "4":
-                        Console.WriteLine("Loan application feature not implemented in UI yet.");
+                        await ApplyForLoanAsync(client);
+                        break;
+                    case "5":
+                        DisplayTransactionHistory(client);
                         break;
                     default:
                         Console.WriteLine("Unknown option.");
@@ -105,6 +110,85 @@ namespace UI
             _console.WriteLine("Press any key to continue...");
             _console.ReadKey(true);
             return false;
+        }
+
+        // method to apply for a loan
+        private async Task ApplyForLoanAsync(Client client)
+        {
+            _console.WriteLine("\n=== Apply for Loan ===");
+
+            _console.Write("Loan amount ($): ");
+            if (!decimal.TryParse(_console.ReadLine(), out var loanAmount))
+            {
+                _console.WriteLine("Invalid amount.");
+                return;
+            }
+
+            if (loanAmount <= 0)
+            {
+                _console.WriteLine("Loan amount must be greater than 0.");
+                return;
+            }
+
+            _console.Write("Monthly income ($): ");
+            if (!decimal.TryParse(_console.ReadLine(), out var monthlyIncome))
+            {
+                _console.WriteLine("Invalid income amount.");
+                return;
+            }
+
+            if (monthlyIncome <= 0)
+            {
+                _console.WriteLine("Monthly income must be greater than 0.");
+                return;
+            }
+
+            try
+            {
+                // Create a new loan request
+                var loanRequest = new LoanRequest(client.Id, client.Name, loanAmount, monthlyIncome);
+
+                // Add the loan request to the file manager for saving and future admin review
+                await _fileManager.AddLoanRequestAsync(loanRequest);
+
+                // Check if loan is safe 
+                if (loanRequest.IsLoanSafe())
+                {
+                    _console.WriteLine($"\nLoan request of ${loanAmount} submitted successfully!");
+                    _console.WriteLine("Your loan appears to be within safe lending parameters.");
+                }
+                else
+                {
+                    _console.WriteLine($"\nLoan request of ${loanAmount} submitted successfully!");
+                    _console.WriteLine("Warning! Your loan may be at higher risk. An admin will review your application.");
+                }
+                _console.WriteLine("Status: Pending");
+            }
+            catch (Exception ex)
+            {
+                _console.WriteLine($"Error submitting loan request: {ex.Message}");
+            }
+        }
+
+        private void DisplayTransactionHistory(Client client)
+        {
+            _console.Clear();
+            _console.WriteLine("=== Transaction History ===\n");
+
+            if (client.BankAccount.TransactionHistory == null || client.BankAccount.TransactionHistory.Count == 0)
+            {
+                _console.WriteLine("No transactions yet.");
+            }
+            else
+            {
+                foreach (var transaction in client.BankAccount.TransactionHistory)
+                {
+                    _console.WriteLine(transaction.ToString());
+                }
+            }
+
+            _console.WriteLine("\nPress any key to continue...");
+            _console.ReadKey(true);
         }
     }
 }
