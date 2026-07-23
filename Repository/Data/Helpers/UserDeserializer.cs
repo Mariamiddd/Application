@@ -1,19 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
-using Core.Enums;
 using Core.Models;
 
 namespace Repository.Data.Helpers
 {
-    // Helper class for deserializing users from different JSON formats
+    /// <summary>
+    /// Helper class for deserializing users from different JSON formats
+    /// </summary>
     public static class UserDeserializer
     {
-        private const string ARRAY_FORMAT_START = "[";
-        private const string TYPE_PROPERTY = "$type";
-        private const string ROLE_PROPERTY = "Role";
-        private const string ADMIN_TYPE = "Admin";
-        private const string CLIENT_TYPE = "Client";
+        private const string ArrayFormatStart = "[";
+        private const string TypeProperty = "$type";
+        private const string RoleProperty = "Role";
+        private const string AdminType = "Admin";
+        private const string ClientType = "Client";
 
         private static readonly JsonSerializerOptions Options = new JsonSerializerOptions
         {
@@ -22,25 +24,19 @@ namespace Repository.Data.Helpers
             Converters = { new RoleJsonConverter() }
         };
 
-        // Main method: deserialize users from JSON (handles both formats)
+        /// <summary>
+        /// Deserialize users from JSON (handles both array and legacy formats)
+        /// </summary>
         public static List<User> Deserialize(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
-            {
                 return new List<User>();
-            }
 
             try
             {
-                // Check which format the file is in
-                if (json.TrimStart().StartsWith(ARRAY_FORMAT_START))
-                {
-                    return DeserializeArrayFormat(json);
-                }
-                else
-                {
-                    return DeserializeLegacyFormat(json);
-                }
+                return json.TrimStart().StartsWith(ArrayFormatStart)
+                    ? DeserializeArrayFormat(json)
+                    : DeserializeLegacyFormat(json);
             }
             catch
             {
@@ -48,77 +44,41 @@ namespace Repository.Data.Helpers
             }
         }
 
-        // Deserialize from new format (JSON array with Role field)
+        /// <summary>
+        /// Deserialize from array format (JSON array with Role field)
+        /// </summary>
         private static List<User> DeserializeArrayFormat(string json)
         {
-            var users = new List<User>();
-
             try
             {
                 using var doc = JsonDocument.Parse(json);
-
-                foreach (var element in doc.RootElement.EnumerateArray())
-                {
-                    var user = DeserializeArrayElement(element);
-                    if (user != null)
-                    {
-                        users.Add(user);
-                    }
-                }
+                return doc.RootElement.EnumerateArray()
+                    .Select(DeserializeArrayElement)
+                    .Where(u => u != null)
+                    .Cast<User>()
+                    .ToList();
             }
             catch
             {
-                // Return what we have if parsing fails
+                return new List<User>();
             }
-
-            return users;
         }
 
-        // Deserialize a single user from array element
+        /// <summary>
+        /// Deserialize a single user from array element
+        /// </summary>
         private static User? DeserializeArrayElement(JsonElement element)
         {
             try
             {
-                if (!element.TryGetProperty(ROLE_PROPERTY, out var roleProp))
-                {
+                if (!element.TryGetProperty(RoleProperty, out var roleProp) || 
+                    !RoleHelper.TryParseRole(roleProp, out var isAdmin))
                     return null;
-                }
 
-                string userJson = element.GetRawText();
-                bool isAdmin = false;
-
-                // Handle both string and integer role values
-                if (roleProp.ValueKind == JsonValueKind.String)
-                {
-                    // New format: string values like "admin" or "client"
-                    string roleString = roleProp.GetString() ?? string.Empty;
-                    isAdmin = roleString.Equals("admin", StringComparison.OrdinalIgnoreCase);
-                }
-                else if (roleProp.ValueKind == JsonValueKind.Number)
-                {
-                    // Legacy format: integer values (0 = Admin, 1 = User)
-                    int roleValue = roleProp.GetInt32();
-                    isAdmin = roleValue == (int)Roles.Admin;
-                }
-                else
-                {
-                    return null;
-                }
-
-                // Check role to determine type
-                if (isAdmin)
-                {
-                    return JsonSerializer.Deserialize<Admin>(userJson, Options);
-                }
-                else
-                {
-                    var client = JsonSerializer.Deserialize<Client>(userJson, Options);
-                    if (client != null && client.BankAccount == null)
-                    {
-                        client.BankAccount = new Account();
-                    }
-                    return client;
-                }
+                var userJson = element.GetRawText();
+                return isAdmin 
+                    ? JsonSerializer.Deserialize<Admin>(userJson, Options)
+                    : DeserializeClientWithAccount(userJson);
             }
             catch
             {
@@ -126,81 +86,72 @@ namespace Repository.Data.Helpers
             }
         }
 
-        // Deserialize from legacy format (line-by-line with $type field)
+        /// <summary>
+        /// Deserialize from legacy format (line-by-line with $type field)
+        /// </summary>
         private static List<User> DeserializeLegacyFormat(string json)
         {
-            var users = new List<User>();
-            var lines = json.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var line in lines)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                var user = DeserializeLegacyLine(line);
-                if (user != null)
-                {
-                    users.Add(user);
-                }
-            }
-
-            return users;
+            return json.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(DeserializeLegacyLine)
+                .Where(u => u != null)
+                .Cast<User>()
+                .ToList();
         }
 
-        // Deserialize a single user from legacy line format
+        /// <summary>
+        /// Deserialize a single user from legacy line format
+        /// </summary>
         private static User? DeserializeLegacyLine(string line)
         {
+            if (string.IsNullOrWhiteSpace(line))
+                return null;
+
             try
             {
                 using var doc = JsonDocument.Parse(line);
 
-                if (!doc.RootElement.TryGetProperty(TYPE_PROPERTY, out var typeProp))
-                {
+                if (!doc.RootElement.TryGetProperty(TypeProperty, out var typeProp))
                     return null;
-                }
 
-                string type = typeProp.GetString() ?? string.Empty;
-
-                // Check type to determine class
-                if (type == CLIENT_TYPE)
-                {
-                    var client = JsonSerializer.Deserialize<Client>(line, Options);
-                    if (client != null && client.BankAccount == null)
-                    {
-                        client.BankAccount = new Account();
-                    }
-                    return client;
-                }
-                else if (type == ADMIN_TYPE)
-                {
-                    return JsonSerializer.Deserialize<Admin>(line, Options);
-                }
+                var type = typeProp.GetString() ?? string.Empty;
+                return type == AdminType
+                    ? JsonSerializer.Deserialize<Admin>(line, Options)
+                    : type == ClientType
+                        ? DeserializeClientWithAccount(line)
+                        : null;
             }
             catch
             {
-                // Skip lines that can't be deserialized
+                return null;
             }
-
-            return null;
         }
 
-        // Serialize users to JSON array format
+        /// <summary>
+        /// Deserialize a Client and ensure BankAccount is initialized
+        /// </summary>
+        private static Client? DeserializeClientWithAccount(string json)
+        {
+            var client = JsonSerializer.Deserialize<Client>(json, Options);
+            if (client?.BankAccount == null)
+                client!.BankAccount = new Account();
+            return client;
+        }
+
+        /// <summary>
+        /// Serialize users to JSON array format
+        /// </summary>
         public static string Serialize(List<User> users)
         {
             try
             {
-                // Serialize each user individually to preserve all properties
-                var userJsonList = users.Select(user => 
-                    JsonSerializer.Serialize(user, user.GetType(), Options)
-                ).ToList();
+                var userJsons = users
+                    .Select(u => JsonSerializer.Serialize(u, u.GetType(), Options))
+                    .ToList();
 
-                // Create formatted JSON array with consistent line endings (Windows CR LF)
-                string newLine = "\r\n";
-                string json = "[" + newLine + 
-                              string.Join("," + newLine, userJsonList.Select(j => "  " + j.TrimStart())) + 
-                              newLine + "]";
+                var newLine = "\r\n";
+                var json = "[" + newLine +
+                          string.Join("," + newLine, userJsons.Select(j => "  " + j.TrimStart())) +
+                          newLine + "]";
 
                 return json;
             }

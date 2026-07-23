@@ -9,214 +9,155 @@ using Repository.Data.Helpers;
 
 namespace Repository.Data
 {
-    // FileRepository class implements the IFileManager interface to manage user and loan data using JSON files.
     public class FileRepository : IFileManager
     {
         private readonly string _usersFilePath;
         private readonly string _loansFilePath;
+        private const string SolutionFile = "Application.slnx";
+        private const string DataFolder = "Data";
+        private const string UsersFile = "users.json";
+        private const string LoansFile = "loans.json";
 
         public FileRepository()
         {
-            // Determine the base directory for data files
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "Application.slnx")))
-            {
-                dir = dir.Parent;
-            }
-
-            string dataDir;
-            if (dir != null)
-            {
-                // If the solution file is found, set the data directory relative to it
-                dataDir = Path.Combine(dir.FullName, "Repository", "Data");
-            }
-            else
-            {
-                // Fallback to current directory if solution file not found
-                dataDir = Path.Combine(Directory.GetCurrentDirectory(), "Repository", "Data");
-            }
-
+            var dataDir = FindDataDirectory();
             FileHelper.EnsureDirectoryExists(dataDir);
 
-            _usersFilePath = Path.Combine(dataDir, "users.json");
-            _loansFilePath = Path.Combine(dataDir, "loans.json");
+            _usersFilePath = Path.Combine(dataDir, UsersFile);
+            _loansFilePath = Path.Combine(dataDir, LoansFile);
 
             Console.WriteLine($"[FileRepository] Users file: {_usersFilePath}");
             Console.WriteLine($"[FileRepository] Loans file: {_loansFilePath}");
         }
 
-        
+        private string FindDataDirectory()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null && !File.Exists(Path.Combine(dir.FullName, SolutionFile)))
+                dir = dir.Parent;
 
-        // Add a new user to the JSON file
+            if (dir != null)
+                return Path.Combine(dir.FullName, "Repository", DataFolder);
+
+            return Path.Combine(Directory.GetCurrentDirectory(), "Repository", DataFolder);
+        }
+
+
+        // USER MANAGEMENT
         public async Task AddUserAsync(User user)
         {
             var users = await GetAllUsersAsync();
             users.Add(user);
-            await SaveAllUsersAsync(users);
+            await SaveUsersAsync(users);
         }
 
-        // Get all users from the JSON file
         public async Task<List<User>> GetAllUsersAsync()
         {
             if (!FileHelper.FileExists(_usersFilePath))
-            {
                 return new List<User>();
-            }
 
-            string json = await FileHelper.ReadFileAsync(_usersFilePath);
+            var json = await FileHelper.ReadFileAsync(_usersFilePath);
             return UserDeserializer.Deserialize(json);
         }
 
-        // Get user by email
-        public async Task<User?> GetUserByEmailAsync(string email)
-        {
-            var users = await GetAllUsersAsync();
-            return users.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
-        }
+        public async Task<User?> GetUserByEmailAsync(string email) =>
+            (await GetAllUsersAsync()).FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
 
-        // Get user by ID
-        public async Task<User?> GetUserByIdAsync(int id)
-        {
-            var users = await GetAllUsersAsync();
-            return users.FirstOrDefault(u => u.Id == id);
-        }
+        public async Task<User?> GetUserByIdAsync(int id) =>
+            (await GetAllUsersAsync()).FirstOrDefault(u => u.Id == id);
 
-        // Update an existing user
         public async Task UpdateUserAsync(User user)
         {
             var users = await GetAllUsersAsync();
             var index = users.FindIndex(u => u.Id == user.Id);
+
             if (index != -1)
             {
                 users[index] = user;
-
-                // Log the balance if the user is a Client
                 if (user is Client client && client.BankAccount != null)
-                {
                     Console.WriteLine($"[FileRepository] Saving user {user.Email} with balance: {client.BankAccount.Balance}");
-                }
 
-                await SaveAllUsersAsync(users);
+                await SaveUsersAsync(users);
             }
         }
 
-        // Delete user by ID
         public async Task DeleteUserAsync(int id)
         {
             var users = await GetAllUsersAsync();
             users.RemoveAll(u => u.Id == id);
-            await SaveAllUsersAsync(users);
+            await SaveUsersAsync(users);
         }
 
-        // Save all users to file
-        private async Task SaveAllUsersAsync(List<User> users)
-        {
-            try
-            {
-                string json = UserDeserializer.Serialize(users);
-                bool success = await FileHelper.WriteFileAsync(_usersFilePath, json);
+        private async Task SaveUsersAsync(List<User> users) =>
+            await SaveAsync(users, _usersFilePath, UserDeserializer.Serialize, "users");
 
-                if (success)
-                {
-                    Console.WriteLine($"[FileRepository] ✓ Saved {users.Count} users to {_usersFilePath}");
-                }
-                else
-                {
-                    Console.WriteLine($"[FileRepository] ✗ Error saving users");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[FileRepository] ✗ Error saving users: {ex.Message}");
-            }
-        }
 
-        
-        // Get all loan requests
+        // LOAN MANAGEMENT
         public async Task<List<LoanRequest>> GetAllLoanRequestsAsync()
         {
             if (!FileHelper.FileExists(_loansFilePath))
-            {
                 return new List<LoanRequest>();
-            }
 
-            string json = await FileHelper.ReadFileAsync(_loansFilePath);
+            var json = await FileHelper.ReadFileAsync(_loansFilePath);
             return LoanDeserializer.Deserialize(json);
         }
 
-        // Get loan by ID
-        public async Task<LoanRequest?> GetLoanRequestByIdAsync(int loanId)
-        {
-            var loans = await GetAllLoanRequestsAsync();
-            return loans.FirstOrDefault(l => l.Id == loanId);
-        }
+        public async Task<LoanRequest?> GetLoanRequestByIdAsync(int loanId) =>
+            (await GetAllLoanRequestsAsync()).FirstOrDefault(l => l.Id == loanId);
 
-        // Get loans by client ID
-        public async Task<List<LoanRequest>> GetLoanRequestsByClientIdAsync(int clientId)
-        {
-            var loans = await GetAllLoanRequestsAsync();
-            return loans.Where(l => l.ClientId == clientId).ToList();
-        }
+        public async Task<List<LoanRequest>> GetLoanRequestsByClientIdAsync(int clientId) =>
+            (await GetAllLoanRequestsAsync()).Where(l => l.ClientId == clientId).ToList();
 
-        // Get pending loan requests only
-        public async Task<List<LoanRequest>> GetPendingLoanRequestsAsync()
-        {
-            var loans = await GetAllLoanRequestsAsync();
-            return loans.Where(l => l.Status == Core.Enums.LoanStatus.Pending).ToList();
-        }
+        public async Task<List<LoanRequest>> GetPendingLoanRequestsAsync() =>
+            (await GetAllLoanRequestsAsync()).Where(l => l.Status == Core.Enums.LoanStatus.Pending).ToList();
 
-        // Add a new loan request
         public async Task AddLoanRequestAsync(LoanRequest loanRequest)
         {
             var loans = await GetAllLoanRequestsAsync();
-
-            // Generate new ID (1 if empty, otherwise max + 1)
             loanRequest.Id = loans.Count > 0 ? loans.Max(l => l.Id) + 1 : 1;
-
             loans.Add(loanRequest);
-            await SaveAllLoansAsync(loans);
+            await SaveLoansAsync(loans);
         }
 
-        // Update an existing loan request
         public async Task UpdateLoanRequestAsync(LoanRequest loanRequest)
         {
             var loans = await GetAllLoanRequestsAsync();
             var index = loans.FindIndex(l => l.Id == loanRequest.Id);
+
             if (index != -1)
             {
                 loans[index] = loanRequest;
-                await SaveAllLoansAsync(loans);
+                await SaveLoansAsync(loans);
             }
         }
 
-        // Delete a loan request
         public async Task DeleteLoanRequestAsync(int loanId)
         {
             var loans = await GetAllLoanRequestsAsync();
             loans.RemoveAll(l => l.Id == loanId);
-            await SaveAllLoansAsync(loans);
+            await SaveLoansAsync(loans);
         }
 
-        // Save all loans to file
-        private async Task SaveAllLoansAsync(List<LoanRequest> loans)
+        private async Task SaveLoansAsync(List<LoanRequest> loans) =>
+            await SaveAsync(loans, _loansFilePath, LoanDeserializer.Serialize, "loans");
+
+
+        // GENERIC SAVE HELPER
+        private async Task SaveAsync<T>(List<T> items, string filePath, Func<List<T>, string> serializer, string itemType)
         {
             try
             {
-                string json = LoanDeserializer.Serialize(loans);
-                bool success = await FileHelper.WriteFileAsync(_loansFilePath, json);
+                var json = serializer(items);
+                var success = await FileHelper.WriteFileAsync(filePath, json);
 
                 if (success)
-                {
-                    Console.WriteLine($"[FileRepository] ✓ Saved {loans.Count} loans to {_loansFilePath}");
-                }
+                    Console.WriteLine($"[FileRepository] ✓ Saved {items.Count} {itemType} to {filePath}");
                 else
-                {
-                    Console.WriteLine($"[FileRepository] ✗ Error saving loans");
-                }
+                    Console.WriteLine($"[FileRepository] ✗ Error saving {itemType}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[FileRepository] ✗ Error saving loans: {ex.Message}");
+                Console.WriteLine($"[FileRepository] ✗ Error saving {itemType}: {ex.Message}");
             }
         }
     }

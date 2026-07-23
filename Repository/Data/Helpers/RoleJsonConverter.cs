@@ -12,30 +12,23 @@ namespace Repository.Data.Helpers
     {
         public override Roles Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            switch (reader.TokenType)
+            return reader.TokenType switch
             {
-                case JsonTokenType.String:
-                    {
-                        string roleString = reader.GetString() ?? string.Empty;
-                        return roleString.Equals("admin", StringComparison.OrdinalIgnoreCase) 
-                            ? Roles.Admin 
-                            : Roles.User;
-                    }
-                case JsonTokenType.Number:
-                    {
-                        int roleValue = reader.GetInt32();
-                        return roleValue == (int)Roles.Admin ? Roles.Admin : Roles.User;
-                    }
-                default:
-                    throw new JsonException($"Unexpected token {reader.TokenType} when parsing role");
-            }
+                JsonTokenType.String => ParseStringRole(reader.GetString()),
+                JsonTokenType.Number => ParseNumberRole(reader.GetInt32()),
+                _ => throw new JsonException($"Unexpected token {reader.TokenType} when parsing role")
+            };
         }
 
-        public override void Write(Utf8JsonWriter writer, Roles value, JsonSerializerOptions options)
-        {
-            // Serialize enum as string: Admin -> "admin", User -> "client"
-            string roleString = value == Roles.Admin ? "admin" : "client";
-            writer.WriteStringValue(roleString);
-        }
+        public override void Write(Utf8JsonWriter writer, Roles value, JsonSerializerOptions options) =>
+            writer.WriteStringValue(RoleHelper.RoleToString(value));
+
+        private static Roles ParseStringRole(string? roleString) =>
+            !string.IsNullOrEmpty(roleString) && roleString.Equals("admin", StringComparison.OrdinalIgnoreCase)
+                ? Roles.Admin
+                : Roles.User;
+
+        private static Roles ParseNumberRole(int roleValue) =>
+            roleValue == (int)Roles.Admin ? Roles.Admin : Roles.User;
     }
 }

@@ -4,35 +4,85 @@ using UI.Interfaces;
 
 namespace UI.Helpers
 {
+    // helper class for reading password input from console with optional masking and cancellation
     internal static class InputHelpers
     {
-        public static string ReadPassword(IConsole? console = null, char mask = '*', int maxLength = 512, bool allowCancel = true)
+        private const int DefaultMaxLength = 512;
+        private const char DefaultMaskChar = '*';
+
+        //   read password from console with optional masking and cancellation
+       
+        public static string ReadPassword(IConsole? console = null, char mask = DefaultMaskChar, 
+                                         int maxLength = DefaultMaxLength, bool allowCancel = true)
         {
             console ??= new ConsoleWrapper();
 
-            var sb = new StringBuilder();
-            ConsoleKeyInfo key;
-            while ((key = console.ReadKey(true)).Key != ConsoleKey.Enter)
+            var password = new StringBuilder();
+
+            while (true)
             {
+                var key = console.ReadKey(intercept: true);
+
+                // Handle enter - end input
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    console.WriteLine();
+                    return password.ToString();
+                }
+
+                // Handle escape - cancel input
                 if (allowCancel && key.Key == ConsoleKey.Escape)
                 {
                     console.WriteLine();
                     return string.Empty;
                 }
 
-                if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
+                // Handle backspace - remove last character
+                if (key.Key == ConsoleKey.Backspace)
                 {
-                    sb.Length--;
-                    if (mask != '\0') console.Write("\b \b");
+                    if (password.Length > 0)
+                    {
+                        password.Length--;
+                        DisplayBackspace(console, mask);
+                    }
+                    continue;
                 }
-                else if (!char.IsControl(key.KeyChar) && sb.Length < maxLength)
+
+                // Handle regular characters - add to password
+                if (IsValidPasswordChar(key, password.Length, maxLength))
                 {
-                    sb.Append(key.KeyChar);
-                    if (mask != '\0') console.Write(mask.ToString());
+                    password.Append(key.KeyChar);
+                    DisplayMask(console, mask);
                 }
             }
-            console.WriteLine();
-            return sb.ToString();
+        }
+
+        // Validate if the key is a valid character for password input
+        private static bool IsValidPasswordChar(ConsoleKeyInfo key, int currentLength, int maxLength)
+        {
+            // Must not be a control character
+            if (char.IsControl(key.KeyChar))
+                return false;
+
+            // Must not exceed max length
+            if (currentLength >= maxLength)
+                return false;
+
+            return true;
+        }
+
+        // Display the mask character for each input character
+        private static void DisplayMask(IConsole console, char mask)
+        {
+            if (mask != '\0')
+                console.Write(mask.ToString());
+        }
+
+        // Handle backspace display in console
+        private static void DisplayBackspace(IConsole console, char mask)
+        {
+            if (mask != '\0')
+                console.Write("\b \b");  // Backspace, space, backspace
         }
     }
 }

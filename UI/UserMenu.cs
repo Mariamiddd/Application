@@ -56,7 +56,7 @@ namespace UI
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Error: {ex.Message}");
+                                _console.WriteLine($"Error: {ex.Message}");
                             }
                         }
                         else
@@ -78,12 +78,12 @@ namespace UI
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Insufficient funds.");
+                                    _console.WriteLine("Insufficient funds.");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Error: {ex.Message}");
+                                _console.WriteLine($"Error: {ex.Message}");
                             }
                         }
                         else
@@ -98,7 +98,7 @@ namespace UI
                         DisplayTransactionHistory(client);
                         break;
                     default:
-                        Console.WriteLine("Unknown option.");
+                        _console.WriteLine("Unknown option.");
                         break;
                 }
             }
@@ -146,7 +146,7 @@ namespace UI
             try
             {
                 // Create a new loan request
-                var loanRequest = new LoanRequest(client.Id, client.Name, loanAmount, monthlyIncome);
+                var loanRequest = new LoanRequest(client.Id, $"{client.Name} {client.LastName}", loanAmount, monthlyIncome);
 
                 // Add the loan request to the file manager for saving and future admin review
                 await _fileManager.AddLoanRequestAsync(loanRequest);

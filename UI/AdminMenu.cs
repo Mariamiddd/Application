@@ -1,8 +1,9 @@
+using Core.Enums;
+using Core.Interfaces;
+using Core.Models;
+using Spectre.Console;
 using System;
 using System.Threading.Tasks;
-using Core.Models;
-using Core.Interfaces;
-using Core.Enums;
 
 namespace UI
 {
@@ -54,7 +55,7 @@ namespace UI
             }
             else
             {
-                _console.WriteLine("User type not supported for admin actions.");
+                AnsiConsole.MarkupLineInterpolated($"[#FF0000]✗[/] User type not supported for admin actions.");
             }
 
             _console.WriteLine("Press any key to continue...");
@@ -93,7 +94,7 @@ namespace UI
                 _console.WriteLine($"\nSelect loan to process (1-{pendingLoans.Count}) or 0 to cancel: ");
                 _console.Write("Option: ");
 
-                if (!int.TryParse(_console.ReadLine(), out int choice) || choice < 0 || choice > pendingLoans.Count)
+                if (!int.TryParse(_console.ReadLine(), out int choice) || choice < 1 || choice > pendingLoans.Count)
                 {
                     _console.WriteLine("Invalid selection.");
                     return;
@@ -221,39 +222,20 @@ namespace UI
                     return;
                 }
 
-                // Display user details
-                _console.WriteLine($"\nUser to Delete:");
-                _console.WriteLine($"Name: {userToDelete.Name} {userToDelete.lastName}");
-                _console.WriteLine($"Email: {userToDelete.Email}");
-                _console.WriteLine($"Role: {userToDelete.Role}");
-
                 // Warning for admin deletion
                 if (userToDelete.Role == Roles.Admin)
                 {
-                    _console.WriteLine("\n⚠ WARNING: You are about to delete another ADMIN account.");
+                    AnsiConsole.MarkupLineInterpolated($"[#FFA500]⚠[/] You are about to delete another [bold red]ADMIN[/] account.");
                 }
 
-                // Security confirmation - require email re-entry
-                _console.WriteLine("\n--- Security Confirmation ---");
-                _console.Write("Re-enter email to confirm deletion: ");
+                // Confirm deletion by re-entering email
+                _console.WriteLine("\nThis action CANNOT be undone!");
+                _console.Write("Please re-enter the email to confirm deletion: ");
                 string confirmationEmail = (_console.ReadLine() ?? string.Empty).Trim();
 
                 if (confirmationEmail != userEmail)
                 {
-                    _console.WriteLine("\n✗ Email confirmation failed. Deletion cancelled.");
-                    _console.WriteLine("Press any key to continue...");
-                    _console.ReadKey(true);
-                    return;
-                }
-
-                // Final confirmation
-                _console.WriteLine("\nThis action CANNOT be undone!");
-                _console.Write("Type 'YES' to confirm deletion: ");
-                string finalConfirmation = (_console.ReadLine() ?? string.Empty).Trim().ToUpper();
-
-                if (finalConfirmation != "YES")
-                {
-                    _console.WriteLine("\n✗ Deletion cancelled.");
+                    _console.WriteLine("\n✓ Email confirmation mismatch. Deletion cancelled.");
                     _console.WriteLine("Press any key to continue...");
                     _console.ReadKey(true);
                     return;
