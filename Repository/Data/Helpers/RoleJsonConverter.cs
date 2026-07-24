@@ -5,9 +5,7 @@ using Core.Enums;
 
 namespace Repository.Data.Helpers
 {
-    /// <summary>
-    /// Custom JSON converter for the Roles enum to serialize as strings instead of numbers
-    /// </summary>
+    ///JSON converter for the Roles enum to serialize as strings instead of numbers
     public class RoleJsonConverter : JsonConverter<Roles>
     {
         public override Roles Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -20,14 +18,17 @@ namespace Repository.Data.Helpers
             };
         }
 
+        // Serialize the Roles enum as a string
         public override void Write(Utf8JsonWriter writer, Roles value, JsonSerializerOptions options) =>
             writer.WriteStringValue(RoleHelper.RoleToString(value));
 
+        // Parse a string role to the Roles enum
         private static Roles ParseStringRole(string? roleString) =>
             !string.IsNullOrEmpty(roleString) && roleString.Equals("admin", StringComparison.OrdinalIgnoreCase)
                 ? Roles.Admin
                 : Roles.User;
 
+        // Parse a numeric role to the Roles enum
         private static Roles ParseNumberRole(int roleValue) =>
             roleValue == (int)Roles.Admin ? Roles.Admin : Roles.User;
     }

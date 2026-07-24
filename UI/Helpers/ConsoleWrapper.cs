@@ -3,6 +3,7 @@ using UI.Interfaces;
 
 namespace UI.Helpers
 {
+    // ConsoleWrapper class implements Iconsole masking the password input and providing methods to read and write to the console.
     internal class ConsoleWrapper : IConsole
     {
         public ConsoleKeyInfo ReadKey(bool intercept) => Console.ReadKey(intercept);

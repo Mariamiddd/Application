@@ -70,21 +70,21 @@ namespace UI
                 if (user != null)
                 {
                     // Login successful, return the user object
-                    AnsiConsole.MarkupLine("[green]? Login successful.[/]");
+                    AnsiConsole.MarkupLine("[magenta]✓ Login successful.[/]");
                     _console.ReadKey(true);
                     return user; 
                 }
-                AnsiConsole.MarkupLine("[red]? Invalid credentials.[/]");
+                AnsiConsole.MarkupLine("[red]✗ Invalid credentials.[/]");
                 _console.ReadKey(true);
                 return null;
             }
             catch (ArgumentException ex)
             {
-                AnsiConsole.MarkupLine($"[yellow]? Validation error: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[yellow]⚠ Validation error: {ex.Message}[/]");
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]? Login failed: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]✗ Login failed: {ex.Message}[/]");
             }
 
             AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
@@ -148,7 +148,7 @@ namespace UI
             var gmailPattern = new Regex("^[A-Za-z0-9._%+-]+@gmail\\.com$", RegexOptions.IgnoreCase);
             if (!gmailPattern.IsMatch(email))
             {
-                AnsiConsole.MarkupLine("[red]? Invalid Gmail address. Please enter a valid address ending with @gmail.com and containing only letters, numbers and . _ % + - characters.[/]");
+                AnsiConsole.MarkupLine("[red]✗ Invalid Gmail address. Please enter a valid address ending with @gmail.com and containing only letters, numbers and . _ % + - characters.[/]");
                 AnsiConsole.MarkupLine("[yellow]Press any key to return to menu[/]");
                 _console.ReadKey(true);
                 return null;               
@@ -168,21 +168,21 @@ namespace UI
                 // Attempt to register the user
                 var user = await _auth.RegisterAsync(email, password, first ?? string.Empty, last ?? string.Empty, selectedRole);
                 string roleString = selectedRole == Roles.Admin ? "Admin" : "Client";
-                AnsiConsole.MarkupLine($"[green]? Registration successful as {roleString}. You are now logged in.[/]");
+                AnsiConsole.MarkupLine($"[magenta]✓ Registration successful as {roleString}. You are now logged in.[/]");
                 _console.ReadKey(true);
                 return user;
             }
             catch (ArgumentException ex)
             {
-                AnsiConsole.MarkupLine($"[yellow]? Validation error: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[yellow]⚠ Validation error: {ex.Message}[/]");
             }
             catch (InvalidOperationException ex)
             {
-                AnsiConsole.MarkupLine($"[red]? Registration failed: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]✗ Registration failed: {ex.Message}[/]");
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]? Unexpected error: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]✗ Unexpected error: {ex.Message}[/]");
             }
 
             AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
@@ -195,7 +195,7 @@ namespace UI
             _console.Clear();
 
             var codePanel = new Panel("[bold]Registering as admin requires special code![/]\n\nEnter the admin registration code:")
-                .Header("[bold yellow]? Admin Registration Code Required[/]", Justify.Center)
+                .Header("[bold yellow]⚠ Admin Registration Code Required[/]", Justify.Center)
                 .RoundedBorder()
                 .BorderColor(Color.Yellow)
                 .Padding(1, 1);
@@ -208,13 +208,13 @@ namespace UI
             // check if admin registration code is correct
             if (string.IsNullOrEmpty(enteredCode) || enteredCode != SecurityConstants.ADMIN_REGISTRATION_CODE)
             {
-                AnsiConsole.MarkupLine("[red]? Incorrect admin registration code![/]");
+                AnsiConsole.MarkupLine("[red]✗ Incorrect admin registration code![/]");
                 AnsiConsole.MarkupLine("[yellow]Try again![/]");
                 _console.ReadKey(true);
                 return false;
             }
 
-            AnsiConsole.MarkupLine("[green]? Code verified! Proceeding with admin registration.[/]");
+            AnsiConsole.MarkupLine("[magenta]✓ Code verified! Proceeding with admin registration.[/]");
             _console.ReadKey(true);
 
             // Additional confirmation key is yes
@@ -227,18 +227,19 @@ namespace UI
                 .Padding(1, 1);
 
             AnsiConsole.Write(confirmPanel);
-            _console.Write("Type '[bold]YES[/]' to confirm admin registration: ");
+            AnsiConsole.MarkupLine("Type [bold yellow]YES[/] to confirm admin registration: ");
+            _console.Write("Input: ");
 
             string? adminConfirmation = _console.ReadLine()?.Trim().ToUpper();
 
             if (adminConfirmation != "YES")
             {
-                AnsiConsole.MarkupLine("[red]? Admin registration cancelled.[/]");
+                AnsiConsole.MarkupLine("[red]✗ Admin registration cancelled.[/]");
                 _console.ReadKey(true);
                 return false;
             }
 
-            AnsiConsole.MarkupLine("[green]? Admin account confirmed![/]");
+            AnsiConsole.MarkupLine("[magenta]✓ Admin account confirmed![/]");
             _console.ReadKey(true);
             return true;
         }

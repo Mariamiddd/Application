@@ -5,9 +5,7 @@ using Core.Models;
 
 namespace Repository.Data.Helpers
 {
-    /// <summary>
-    /// Helper class for deserializing loan requests from JSON
-    /// </summary>
+    // loan deserializer class to handle serialization and deserialization of loan requests 
     public static class LoanDeserializer
     {
         private static readonly JsonSerializerOptions Options = new JsonSerializerOptions
@@ -16,9 +14,7 @@ namespace Repository.Data.Helpers
             WriteIndented = true
         };
 
-        /// <summary>
-        /// Deserialize loans from JSON
-        /// </summary>
+        //deserialize loans from JSON
         public static List<LoanRequest> Deserialize(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -34,9 +30,7 @@ namespace Repository.Data.Helpers
             }
         }
 
-        /// <summary>
-        /// Serialize loans to JSON
-        /// </summary>
+        // serialize loans to JSON
         public static string Serialize(List<LoanRequest> loans)
         {
             try

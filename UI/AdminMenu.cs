@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace UI
 {
+    // AdminMenu class provides the interface for admin users to manage loan requests and user accounts.
     internal class AdminMenu
     {
         private readonly Interfaces.IConsole _console;
@@ -21,23 +22,36 @@ namespace UI
         // Show menu for any logged-in user. If returns true, request logout.
         public async Task<bool> ShowAsync(User user)
         {
-            // Clear the console and display the logged-in user's email
+            // Clear the console for a fresh display
             _console.Clear();
-            _console.WriteLine($"Logged in as: {user.Email}");
 
-            // Display the menu options based on the user's role
-            user.DisplayMenu();
+            var headerPanel = new Panel($"[bold cyan]Logged in as: {user.Email}[/]")
+                .Header("[bold yellow]Admin Dashboard[/]", Justify.Center)
+                .RoundedBorder()
+                .BorderColor(Color.Yellow)
+                .Padding(1, 1);
+
+            AnsiConsole.Write(headerPanel);
+
+            // Display styled menu options
+            var menuContent = "[bold yellow]1[/] Process Loan Requests (Approve/Reject)\n[bold yellow]2[/] Delete User Account\n[bold yellow]0[/] Logout";
+            var menuPanel = new Panel(menuContent)
+                .Header("[bold yellow]Admin Options[/]", Justify.Center)
+                .RoundedBorder()
+                .BorderColor(Color.Yellow)
+                .Padding(1, 1);
+            AnsiConsole.Write(menuPanel);
 
             _console.Write("Option: ");
             var choice = _console.ReadLine();
 
-            // Basic logout handling same for both admin and client
+            //logout handling same for both admin and client
             if (choice == "0")
             {
                 return true;
             }
 
-            // Handle admin options
+            // handling admin options
             if (user is Admin admin)
             {
                 switch (choice)
@@ -55,10 +69,10 @@ namespace UI
             }
             else
             {
-                AnsiConsole.MarkupLineInterpolated($"[#FF0000]✗[/] User type not supported for admin actions.");
+                AnsiConsole.MarkupLineInterpolated($"[red]✗ User type not supported for admin actions.[/]");
             }
 
-            _console.WriteLine("Press any key to continue...");
+            AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
             _console.ReadKey(true);
             return false;
         }
@@ -66,7 +80,15 @@ namespace UI
         private async Task ProcessLoanRequestsAsync(Admin admin)
         {
             _console.Clear();
-            _console.WriteLine("=== Process Loan Requests ===\n");
+
+            var headerPanel = new Panel("[bold]Process Loan Requests[/]")
+                .Header("[bold cyan]Pending Loans[/]", Justify.Center)
+                .RoundedBorder()
+                .BorderColor(Color.Cyan)
+                .Padding(1, 1);
+
+            AnsiConsole.Write(headerPanel);
+            AnsiConsole.Write(new Rule("[cyan]Pending Loan Requests[/]").RuleStyle("cyan"));
 
             // Get all pending loan requests
             try
@@ -75,28 +97,28 @@ namespace UI
 
                 if (pendingLoans.Count == 0)
                 {
-                    _console.WriteLine("No pending loan requests at this time.");
-                    _console.WriteLine("Press any key to continue...");
+                    AnsiConsole.MarkupLine("[yellow] !No pending loan requests at this time.[/]");
+                    AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
                     _console.ReadKey(true);
                     return;
                 }
 
-                _console.WriteLine($"Found {pendingLoans.Count} pending loan request(s):\n");
+                AnsiConsole.MarkupLine($"[cyan]Found [bold]{pendingLoans.Count}[/] pending loan request(s):[/]\n");
 
                 // Display all pending loans
                 for (int i = 0; i < pendingLoans.Count; i++)
                 {
                     var loan = pendingLoans[i];
-                    _console.WriteLine($"{i + 1}. Client: {loan.ClientName} | Amount: ${loan.Amount} | Income: ${loan.Income}");
-                    _console.WriteLine($"   Status: {loan.Status} | Submitted: {loan.RequestDate:MM/dd/yyyy}");
+                    AnsiConsole.MarkupLine($"[bold]{i + 1}.[/] Client: {loan.ClientName} | Amount: [yellow]${loan.Amount}[/] | Income: [magenta]${loan.Income}[/]");
+                    AnsiConsole.MarkupLine($"   Status: [cyan]{loan.Status}[/] | Submitted: {loan.RequestDate:MM/dd/yyyy}");
                 }
 
-                _console.WriteLine($"\nSelect loan to process (1-{pendingLoans.Count}) or 0 to cancel: ");
+                AnsiConsole.MarkupLine($"\n[cyan]Select loan to process (1-{pendingLoans.Count}) or 0 to cancel: [/]");
                 _console.Write("Option: ");
 
                 if (!int.TryParse(_console.ReadLine(), out int choice) || choice < 1 || choice > pendingLoans.Count)
                 {
-                    _console.WriteLine("Invalid selection.");
+                    AnsiConsole.MarkupLine("[red]✗ Invalid selection.[/]");
                     return;
                 }
 
@@ -110,27 +132,35 @@ namespace UI
             }
             catch (Exception ex)
             {
-                _console.WriteLine($"Error processing loan requests: {ex.Message}");
+                AnsiConsole.MarkupLine($"[red]✗ Error processing loan requests: {ex.Message}[/]");
             }
         }
 
         private async Task ApproveLoanDialogAsync(LoanRequest loan)
         {
             _console.Clear();
-            _console.WriteLine("=== Loan Review ===\n");
-            _console.WriteLine($"Client Name: {loan.ClientName}");
-            _console.WriteLine($"Loan Amount: ${loan.Amount}");
-            _console.WriteLine($"Monthly Income: ${loan.Income}");
-            _console.WriteLine($"Request Date: {loan.RequestDate:MM/dd/yyyy HH:mm}");
+
+            var reviewPanel = new Panel($"[bold]Client: {loan.ClientName}[/]\nAmount: [yellow]${loan.Amount}[/]\nIncome: [magenta]${loan.Income}[/]\nDate: {loan.RequestDate:MM/dd/yyyy HH:mm}")
+                .Header("[bold cyan]Loan Review[/]", Justify.Center)
+                .RoundedBorder()
+                .BorderColor(Color.Cyan)
+                .Padding(1, 1);
+
+            AnsiConsole.Write(reviewPanel);
+            AnsiConsole.Write(new Rule("[cyan]Loan Assessment[/]").RuleStyle("cyan"));
 
             // Check if loan is safe
             bool isSafe = loan.IsLoanSafe();
-            _console.WriteLine($"Loan Safety: {(isSafe ? "SAFE" : "RISKY")}");
-            _console.WriteLine($"\nStatus: {loan.Status}\n");
+            var safetyStatus = isSafe ? "[magenta]✓ SAFE[/]" : "[red]✗ RISKY[/]";
+            AnsiConsole.MarkupLine($"Loan Safety: {safetyStatus}");
+            AnsiConsole.MarkupLine($"Status: [cyan]{loan.Status}[/]\n");
 
-            _console.WriteLine("1) Approve Loan");
-            _console.WriteLine("2) Reject Loan");
-            _console.WriteLine("0) Cancel");
+            var optionsPanel = new Panel("[bold cyan]1[/] Approve Loan\n[bold cyan]2[/] Reject Loan\n[bold cyan]0[/] Cancel")
+                .RoundedBorder()
+                .BorderColor(Color.Magenta)
+                .Padding(1, 1);
+
+            AnsiConsole.Write(optionsPanel);
             _console.Write("Option: ");
 
             var choice = _console.ReadLine();
@@ -146,7 +176,7 @@ namespace UI
                 case "0":
                     return;
                 default:
-                    _console.WriteLine("Invalid selection.");
+                    AnsiConsole.MarkupLine("[red]✗ Invalid selection.[/]");
                     break;
             }
         }
@@ -167,12 +197,12 @@ namespace UI
                     await _fileManager.UpdateUserAsync(client);
                 }
 
-                _console.WriteLine($"\n✓ Loan of ${loan.Amount} APPROVED for {loan.ClientName}");
-                _console.WriteLine($"Amount added to client's balance.");
+                AnsiConsole.MarkupLine($"\n[magenta]✓ Loan of [bold]${loan.Amount}[/] APPROVED[/] for {loan.ClientName}");
+                AnsiConsole.MarkupLine("[yellow]Amount added to client's balance.[/]");
             }
             catch (Exception ex)
             {
-                _console.WriteLine($"Error approving loan: {ex.Message}");
+                AnsiConsole.MarkupLine($"[red]✗ Error approving loan: {ex.Message}[/]");
             }
         }
 
@@ -184,27 +214,35 @@ namespace UI
                 loan.Status = LoanStatus.Rejected;
                 await _fileManager.UpdateLoanRequestAsync(loan);
 
-                _console.WriteLine($"\n✗ Loan of ${loan.Amount} REJECTED for {loan.ClientName}");
-                _console.WriteLine($"Client has been notified.");
+                AnsiConsole.MarkupLine($"\n[red]✗ Loan of [bold]${loan.Amount}[/] REJECTED[/] for {loan.ClientName}");
+                AnsiConsole.MarkupLine("[yellow]Client has been notified.[/]");
             }
             catch (Exception ex)
             {
-                _console.WriteLine($"Error rejecting loan: {ex.Message}");
+                AnsiConsole.MarkupLine($"[red]✗ Error rejecting loan: {ex.Message}[/]");
             }
         }
 
         private async Task DeleteUserAccountAsync()
         {
             _console.Clear();
-            _console.WriteLine("=== Delete User Account ===\n");
 
-            _console.Write("Enter user email to delete: ");
+            var headerPanel = new Panel("[bold]Enter user email to delete[/]")
+                .Header("[bold red]Delete User Account[/]", Justify.Center)
+                .RoundedBorder()
+                .BorderColor(Color.Red)
+                .Padding(1, 1);
+
+            AnsiConsole.Write(headerPanel);
+            AnsiConsole.Write(new Rule("[red]Confirm User Deletion[/]").RuleStyle("red"));
+
+            _console.Write("Email: ");
             string userEmail = (_console.ReadLine() ?? string.Empty).Trim();
 
             if (string.IsNullOrEmpty(userEmail))
             {
-                _console.WriteLine("Invalid email. Operation cancelled.");
-                _console.WriteLine("Press any key to continue...");
+                AnsiConsole.MarkupLine("[red]✗ Invalid email. Operation cancelled.[/]");
+                AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
                 _console.ReadKey(true);
                 return;
             }
@@ -216,8 +254,8 @@ namespace UI
 
                 if (userToDelete == null)
                 {
-                    _console.WriteLine($"User with email '{userEmail}' not found.");
-                    _console.WriteLine("Press any key to continue...");
+                    AnsiConsole.MarkupLine($"[red]✗ User with email '[bold]{userEmail}[/]' not found.[/]");
+                    AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
                     _console.ReadKey(true);
                     return;
                 }
@@ -225,18 +263,28 @@ namespace UI
                 // Warning for admin deletion
                 if (userToDelete.Role == Roles.Admin)
                 {
-                    AnsiConsole.MarkupLineInterpolated($"[#FFA500]⚠[/] You are about to delete another [bold red]ADMIN[/] account.");
+                    var adminWarning = new Panel("[bold red]⚠ WARNING: Admin Account[/]\nYou are about to delete another ADMIN account!")
+                        .BorderColor(Color.Red)
+                        .RoundedBorder()
+                        .Padding(1, 1);
+                    AnsiConsole.Write(adminWarning);
                 }
 
                 // Confirm deletion by re-entering email
-                _console.WriteLine("\nThis action CANNOT be undone!");
+                var confirmPanel = new Panel($"[bold red]⚠ This action CANNOT be undone![/]\n\nUser Email: [yellow]{userToDelete.Email}[/]\nUser Role: [yellow]{userToDelete.Role}[/]")
+                    .Header("[bold]Confirm Deletion[/]", Justify.Center)
+                    .BorderColor(Color.Red)
+                    .RoundedBorder()
+                    .Padding(1, 1);
+                AnsiConsole.Write(confirmPanel);
+
                 _console.Write("Please re-enter the email to confirm deletion: ");
                 string confirmationEmail = (_console.ReadLine() ?? string.Empty).Trim();
 
                 if (confirmationEmail != userEmail)
                 {
-                    _console.WriteLine("\n✓ Email confirmation mismatch. Deletion cancelled.");
-                    _console.WriteLine("Press any key to continue...");
+                    AnsiConsole.MarkupLine("\n[magenta]✓ Email confirmation mismatch. Deletion cancelled.[/]");
+                    AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
                     _console.ReadKey(true);
                     return;
                 }
@@ -244,14 +292,14 @@ namespace UI
                 // Perform deletion
                 await _fileManager.DeleteUserAsync(userToDelete.Id);
 
-                _console.WriteLine($"\n✓ User account '{userEmail}' has been successfully deleted.");
+                AnsiConsole.MarkupLine($"\n[magenta]✓ User account '[bold]{userEmail}[/]' has been successfully deleted.[/]");
             }
             catch (Exception ex)
             {
-                _console.WriteLine($"Error deleting user: {ex.Message}");
+                AnsiConsole.MarkupLine($"[red]✗ Error deleting user: {ex.Message}[/]");
             }
 
-            _console.WriteLine("Press any key to continue...");
+            AnsiConsole.MarkupLine("[yellow]Press any key to continue...[/]");
             _console.ReadKey(true);
         }
     }

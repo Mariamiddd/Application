@@ -4,14 +4,10 @@ using Core.Enums;
 
 namespace Repository.Data.Helpers
 {
-    /// <summary>
-    /// Helper class for parsing roles from different JSON value types
-    /// </summary>
+    // helper class to parse and convert user roles from JSON elements
     internal static class RoleHelper
     {
-        /// <summary>
         /// Parse role from a JSON element property
-        /// </summary>
         public static bool TryParseRole(JsonElement roleProp, out bool isAdmin)
         {
             isAdmin = false;
@@ -24,9 +20,7 @@ namespace Repository.Data.Helpers
             };
         }
 
-        /// <summary>
-        /// Parse role from string value (e.g., "admin", "client")
-        /// </summary>
+        // parse role from string value 'admin' or 'client'
         private static bool TryParseStringRole(string? roleString, out bool isAdmin)
         {
             isAdmin = !string.IsNullOrEmpty(roleString) && 
@@ -34,18 +28,14 @@ namespace Repository.Data.Helpers
             return true;
         }
 
-        /// <summary>
-        /// Parse role from numeric value (legacy format: 0=Admin, 1=User)
-        /// </summary>
+        // parse role from numeric value - 0=Admin, 1=User
         private static bool TryParseNumberRole(int roleValue, out bool isAdmin)
         {
             isAdmin = roleValue == (int)Roles.Admin;
             return true;
         }
 
-        /// <summary>
         /// Convert Roles enum to JSON string representation
-        /// </summary>
         public static string RoleToString(Roles role) =>
             role == Roles.Admin ? "admin" : "client";
     }

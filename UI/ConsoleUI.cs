@@ -7,7 +7,7 @@ namespace UI
     public class ConsoleUI
     {
         private readonly IAuthService _auth;
-        // current user is null if not logged in, otherwise holds the logged in domain user
+        // field to hold the current logged-in user, null if no user is logged in
         private Core.Models.User? _currentUser; 
         private readonly GuestMenu _guestMenu;
         private readonly AdminMenu _adminMenu;

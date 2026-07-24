@@ -9,6 +9,7 @@ using Repository.Data.Helpers;
 
 namespace Repository.Data
 {
+    // This class implements the IFileManager interface to manage user and loan data stored in JSON files.
     public class FileRepository : IFileManager
     {
         private readonly string _usersFilePath;
@@ -18,6 +19,7 @@ namespace Repository.Data
         private const string UsersFile = "users.json";
         private const string LoansFile = "loans.json";
 
+        // Constructor initializes file paths and ensures the data directory exists
         public FileRepository()
         {
             var dataDir = FindDataDirectory();
@@ -30,6 +32,7 @@ namespace Repository.Data
             Console.WriteLine($"[FileRepository] Loans file: {_loansFilePath}");
         }
 
+        // finddatadirectory method to locate the data directory based on the solution file's location
         private string FindDataDirectory()
         {
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -43,7 +46,7 @@ namespace Repository.Data
         }
 
 
-        // USER MANAGEMENT
+        // manage users add, update, delete, get by id, get by email
         public async Task AddUserAsync(User user)
         {
             var users = await GetAllUsersAsync();
@@ -92,7 +95,7 @@ namespace Repository.Data
             await SaveAsync(users, _usersFilePath, UserDeserializer.Serialize, "users");
 
 
-        // LOAN MANAGEMENT
+        // manage loan requests add, update, delete, get by id, get by client id, get pending
         public async Task<List<LoanRequest>> GetAllLoanRequestsAsync()
         {
             if (!FileHelper.FileExists(_loansFilePath))
@@ -142,7 +145,7 @@ namespace Repository.Data
             await SaveAsync(loans, _loansFilePath, LoanDeserializer.Serialize, "loans");
 
 
-        // GENERIC SAVE HELPER
+        // save method to handle serialization and writing to file for both users and loans
         private async Task SaveAsync<T>(List<T> items, string filePath, Func<List<T>, string> serializer, string itemType)
         {
             try

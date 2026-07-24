@@ -6,9 +6,7 @@ using Core.Models;
 
 namespace Repository.Data.Helpers
 {
-    /// <summary>
-    /// Helper class for deserializing users from different JSON formats
-    /// </summary>
+    ///  class for deserializing users from different JSON formats
     public static class UserDeserializer
     {
         private const string ArrayFormatStart = "[";
@@ -24,9 +22,7 @@ namespace Repository.Data.Helpers
             Converters = { new RoleJsonConverter() }
         };
 
-        /// <summary>
-        /// Deserialize users from JSON (handles both array and legacy formats)
-        /// </summary>
+        /// Deserialize users from JSON 
         public static List<User> Deserialize(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -44,9 +40,7 @@ namespace Repository.Data.Helpers
             }
         }
 
-        /// <summary>
-        /// Deserialize from array format (JSON array with Role field)
-        /// </summary>
+        /// Deserialize from array format 
         private static List<User> DeserializeArrayFormat(string json)
         {
             try
@@ -64,9 +58,7 @@ namespace Repository.Data.Helpers
             }
         }
 
-        /// <summary>
         /// Deserialize a single user from array element
-        /// </summary>
         private static User? DeserializeArrayElement(JsonElement element)
         {
             try
@@ -86,9 +78,7 @@ namespace Repository.Data.Helpers
             }
         }
 
-        /// <summary>
-        /// Deserialize from legacy format (line-by-line with $type field)
-        /// </summary>
+        /// Deserialize from legacy format 
         private static List<User> DeserializeLegacyFormat(string json)
         {
             return json.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
@@ -98,9 +88,7 @@ namespace Repository.Data.Helpers
                 .ToList();
         }
 
-        /// <summary>
-        /// Deserialize a single user from legacy line format
-        /// </summary>
+        /// Deserialize a single user from json 
         private static User? DeserializeLegacyLine(string line)
         {
             if (string.IsNullOrWhiteSpace(line))
@@ -126,9 +114,7 @@ namespace Repository.Data.Helpers
             }
         }
 
-        /// <summary>
         /// Deserialize a Client and ensure BankAccount is initialized
-        /// </summary>
         private static Client? DeserializeClientWithAccount(string json)
         {
             var client = JsonSerializer.Deserialize<Client>(json, Options);
@@ -137,9 +123,7 @@ namespace Repository.Data.Helpers
             return client;
         }
 
-        /// <summary>
         /// Serialize users to JSON array format
-        /// </summary>
         public static string Serialize(List<User> users)
         {
             try
