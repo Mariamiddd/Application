@@ -184,6 +184,5 @@ For issues, feature requests, or questions, please open an issue on the [GitHub 
 
 ---
 
-**Last Updated**: 2024
 **Version**: 1.0.0
 **Framework**: .NET 10
